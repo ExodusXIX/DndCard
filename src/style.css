@@ -834,5 +834,16 @@ body {
 .token-bar {
   display: flex;
   justify-content: flex-end;
-  padding: 0 4px 4px 4px;
+  padding: 0 4px 6px 4px;
+}
+/* Hand card queued to be played face down */
+.hand-card-set {
+  background: rgba(50,40,80,0.3);
+  border-color: rgba(140,100,200,0.4);
+  color: rgba(180,150,220,0.8);
+  font-style: italic;
+}
+.token-bar .zone-btn {
+  width: auto;
+  padding: 3px 12px;
 }

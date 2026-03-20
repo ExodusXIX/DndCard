@@ -20,7 +20,9 @@ export const board = {
     hand: [],
     gallows: [],
     extraDeck: [],
-    faceState: {}
+    faceState: {},
+    // tracks which hand card is queued to be played face down
+    setFaceDown: {}
   },
   playerB: {
     monster: [null, null, null],
@@ -29,7 +31,8 @@ export const board = {
     hand: [],
     gallows: [],
     extraDeck: [],
-    faceState: {}
+    faceState: {},
+    setFaceDown: {}
   }
 }
 
@@ -129,7 +132,10 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
           : true
         if (canAfford) {
           dst[toZone][toIndex] = cardName
-          dst.faceState[`${toZone}-${toIndex}`] = true
+          // check if this card was queued to be played face down
+          const playFaceDown = src.setFaceDown[cardName] === true
+          dst.faceState[`${toZone}-${toIndex}`] = !playFaceDown
+          delete src.setFaceDown[cardName]
           if (typeof window.onCardPlayed === 'function') {
             window.onCardPlayed(toPlayer, cardName)
           }
@@ -201,27 +207,72 @@ export function renderField(player) {
             cardEl.appendChild(statsEl)
           }
         } else {
+          // opponent sees blank back
           const nameEl = document.createElement('div')
           nameEl.className = 'field-card-name'
           nameEl.textContent = '▪ Face Down'
           cardEl.appendChild(nameEl)
         }
 
-        // flip button — owner only
+        // right click on field card — owner only
         if (player === localPlayer) {
-          const flipBtn = document.createElement('button')
-          flipBtn.className = 'flip-btn'
-          flipBtn.textContent = isFaceUp ? '↓' : '↑'
-          flipBtn.title = isFaceUp ? 'Set Face Down' : 'Flip Face Up'
-          flipBtn.addEventListener('click', e => {
+          cardEl.addEventListener('contextmenu', e => {
+            e.preventDefault()
             e.stopPropagation()
-            pb.faceState[faceKey] = !isFaceUp
-            renderField(player)
-            if (!isRemoteAction && typeof window.broadcastFlip === 'function') {
-              window.broadcastFlip(player, zoneType, i, !isFaceUp)
-            }
+            showContextMenu(e.clientX, e.clientY, [
+              {
+                label: isFaceUp ? '↓ Set Face Down' : '↑ Flip Face Up',
+                action: () => {
+                  pb.faceState[faceKey] = !isFaceUp
+                  renderField(player)
+                  if (!isRemoteAction && typeof window.broadcastFlip === 'function') {
+                    window.broadcastFlip(player, zoneType, i, !isFaceUp)
+                  }
+                }
+              },
+              {
+                label: '⚰ Send to Gallows',
+                action: () => {
+                  pb[zoneType][i] = null
+                  delete pb.faceState[faceKey]
+                  pb.gallows.push(cardName)
+                  updateAllCounts(player)
+                  renderAll(player)
+                  if (!isRemoteAction) {
+                    broadcastCardMoved({
+                      fromPlayer: player,
+                      fromZone: zoneType,
+                      fromIndex: String(i),
+                      toPlayer: player,
+                      toZone: 'gallows',
+                      toIndex: null,
+                      cardName
+                    })
+                  }
+                }
+              },
+              {
+                label: '✋ Return to Hand',
+                action: () => {
+                  pb[zoneType][i] = null
+                  delete pb.faceState[faceKey]
+                  pb.hand.push(cardName)
+                  renderAll(player)
+                  if (!isRemoteAction) {
+                    broadcastCardMoved({
+                      fromPlayer: player,
+                      fromZone: zoneType,
+                      fromIndex: String(i),
+                      toPlayer: player,
+                      toZone: 'hand',
+                      toIndex: null,
+                      cardName
+                    })
+                  }
+                }
+              }
+            ])
           })
-          cardEl.appendChild(flipBtn)
         }
 
         cardEl.addEventListener('dragstart', e => {
@@ -336,8 +387,10 @@ export function renderHand(player) {
     const el = document.createElement('div')
 
     if (player === localPlayer) {
-      el.className = 'hand-card'
-      el.textContent = card.name
+      // show visual indicator if card is queued face down
+      const isSetFaceDown = pb.setFaceDown[cardName] === true
+      el.className = `hand-card${isSetFaceDown ? ' hand-card-set' : ''}`
+      el.textContent = isSetFaceDown ? `↓ ${card.name}` : card.name
       el.draggable = true
       el.addEventListener('click', () => showCardDetail(cardName))
       el.addEventListener('dragstart', e => {
@@ -347,16 +400,32 @@ export function renderHand(player) {
         e.dataTransfer.setData('fromIndex', '-1')
         e.dataTransfer.setData('fromPlayer', player)
       })
-      // right click → send to gallows
+      // right click context menu
       el.addEventListener('contextmenu', e => {
         e.preventDefault()
+        const isSet = pb.setFaceDown[cardName] === true
         showContextMenu(e.clientX, e.clientY, [
+          {
+            label: '⚔ Summon Face Up',
+            action: () => {
+              delete pb.setFaceDown[cardName]
+              renderHand(player)
+            }
+          },
+          {
+            label: '↓ Set Face Down',
+            action: () => {
+              pb.setFaceDown[cardName] = true
+              renderHand(player)
+            }
+          },
           {
             label: '⚰ Send to Gallows',
             action: () => {
               const idx = pb.hand.indexOf(cardName)
               if (idx !== -1) {
                 pb.hand.splice(idx, 1)
+                delete pb.setFaceDown[cardName]
                 pb.gallows.push(cardName)
                 updateAllCounts(player)
                 renderAll(player)
@@ -517,7 +586,6 @@ export function showCardDetail(cardName) {
   document.getElementById('detail-defense').textContent = card.defense
   document.getElementById('detail-cost').textContent = card.cost
 
-  // attribute — monsters only
   const attrEl = document.getElementById('detail-attribute')
   if (attrEl) {
     if (card.attribute) {

@@ -71,7 +71,10 @@ export function setLocalPlayer(p) {
 let contextMenu = null
 
 function createContextMenu() {
-  if (document.getElementById('card-context-menu')) return
+  if (document.getElementById('card-context-menu')) {
+    contextMenu = document.getElementById('card-context-menu')
+    return
+  }
   const menu = document.createElement('div')
   menu.id = 'card-context-menu'
   menu.className = 'context-menu hidden'
@@ -102,33 +105,47 @@ function showContextMenu(x, y, items) {
 }
 
 // ── DRAG AND DROP ──────────────────────────────────────────
+// Uses event delegation on the board container instead of
+// individual zone elements — this way re-renders don't break listeners
 
 export function initDragAndDrop() {
   createContextMenu()
 
-  document.querySelectorAll('.droptarget').forEach(zone => {
-    zone.addEventListener('dragover', e => {
-      e.preventDefault()
-      zone.classList.add('drag-over')
-    })
-    zone.addEventListener('dragleave', e => {
-      if (!zone.contains(e.relatedTarget)) {
-        zone.classList.remove('drag-over')
-      }
-    })
-    zone.addEventListener('drop', e => {
-      e.preventDefault()
+  const boardScreen = document.getElementById('board')
+  if (!boardScreen) return
+
+  // dragover — find the droptarget ancestor
+  boardScreen.addEventListener('dragover', e => {
+    const zone = e.target.closest('.droptarget')
+    if (!zone) return
+    e.preventDefault()
+    zone.classList.add('drag-over')
+  })
+
+  // dragleave — only remove highlight when leaving the zone entirely
+  boardScreen.addEventListener('dragleave', e => {
+    const zone = e.target.closest('.droptarget')
+    if (!zone) return
+    if (!zone.contains(e.relatedTarget)) {
       zone.classList.remove('drag-over')
-      const cardName = e.dataTransfer.getData('cardName')
-      const fromZone = e.dataTransfer.getData('fromZone')
-      const fromIndex = e.dataTransfer.getData('fromIndex')
-      const fromPlayer = e.dataTransfer.getData('fromPlayer')
-      const toZone = zone.dataset.zone
-      const toPlayer = zone.dataset.player
-      const toIndex = zone.dataset.index !== undefined ? parseInt(zone.dataset.index) : null
-      if (!cardName || !toZone || !toPlayer) return
-      moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName)
-    })
+    }
+  })
+
+  // drop — find the droptarget ancestor and handle the drop
+  boardScreen.addEventListener('drop', e => {
+    const zone = e.target.closest('.droptarget')
+    if (!zone) return
+    e.preventDefault()
+    zone.classList.remove('drag-over')
+    const cardName = e.dataTransfer.getData('cardName')
+    const fromZone = e.dataTransfer.getData('fromZone')
+    const fromIndex = e.dataTransfer.getData('fromIndex')
+    const fromPlayer = e.dataTransfer.getData('fromPlayer')
+    const toZone = zone.dataset.zone
+    const toPlayer = zone.dataset.player
+    const toIndex = zone.dataset.index !== undefined ? parseInt(zone.dataset.index) : null
+    if (!cardName || !toZone || !toPlayer) return
+    moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName)
   })
 }
 
@@ -137,7 +154,7 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   const dst = board[`player${toPlayer.toUpperCase()}`]
   const card = getCard(cardName)
 
-  // save face state BEFORE removing from source so we can carry it over
+  // save face state BEFORE removing from source
   const savedFaceState = src.faceState[`${fromZone}-${fromIndex}`] ?? true
 
   // remove from source
@@ -173,7 +190,6 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
           }
         }
       } else {
-        // moving from field to field — carry over the saved face state
         dst[toZone][toIndex] = cardName
         dst.faceState[`${toZone}-${toIndex}`] = savedFaceState
       }
@@ -295,6 +311,17 @@ export function renderField(player) {
                   }
                 }
               })
+              menuItems.push({
+                label: '📝 Edit Effect',
+                action: () => {
+                  const val = prompt('Effect text:', card.effect)
+                  if (val !== null) {
+                    tokenStore[cardName].effect = val.trim()
+                    renderField(player)
+                    broadcastTokenEdit(cardName)
+                  }
+                }
+              })
             } else {
               menuItems.push({
                 label: `⚔ Modify ATK (${card.attack})`,
@@ -320,19 +347,6 @@ export function renderField(player) {
                   }
                 }
               })
-              menuItems.push({
-                label: '📝 Edit Effect',
-                action: () => {
-                  const val = prompt('Effect Text:',card.effect)
-                  if (val !== null) {
-                    tokenStore[cardName].effect = val.trim()
-                    renderField(player)
-                    broadcastTokenEdit(cardName)
-
-                  }
-                }
-              }
-              )
             }
 
             menuItems.push({
@@ -691,7 +705,7 @@ export function showDeckPicker(player) {
     names.forEach(name => {
       const btn = document.createElement('button')
       btn.className = 'menu-btn'
-      btn.style.marginBottom = '8x'
+      btn.style.marginBottom = '8px'
       btn.textContent = name
       btn.onclick = () => loadDeckToBoard(player, name)
       list.appendChild(btn)

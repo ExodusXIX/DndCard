@@ -1,7 +1,7 @@
 import './style.css'
 import { initDeckEditor, setupDeckDropzone } from './deckEditor.js'
 import { playerA, playerB, rollBank, spendFromBank, getRemainingBank, cardLibrary, gameState } from './game.js'
-import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, board, setRemoteAction, addTokenToHand, registerToken } from './board.js'
+import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, board, setRemoteAction, addTokenToHand, registerToken, resetBoard } from './board.js'
 import { joinGame, leaveGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames, broadcastFlip } from './sync.js'
 
 let localPlayer = 'a'
@@ -13,16 +13,26 @@ window.showScreen = function(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
   document.getElementById(screenId).classList.add('active')
 
-  // only initialize drag and drop once — prevents duplicate event listener buildup
   if (screenId === 'board' && !dragDropInitialized) {
     initDragAndDrop()
     dragDropInitialized = true
   }
 
-  // clean up supabase channel and reset state when leaving the game
   if (screenId === 'home') {
     leaveGame()
+    resetBoard()
     dragDropInitialized = false
+    // reset HP display
+    ;['a', 'b'].forEach(p => {
+      const hp = document.getElementById(`${p}-hp-value`)
+      if (hp) hp.textContent = '10'
+      const remain = document.getElementById(`${p}-bank-remaining`)
+      if (remain) remain.textContent = '—'
+      const status = document.getElementById(`${p}-bank-status`)
+      if (status) status.textContent = ''
+    })
+    const bankVal = document.getElementById('bank-value')
+    if (bankVal) bankVal.textContent = '—'
   }
 }
 
@@ -69,7 +79,6 @@ window.addToken = function(player) {
   addTokenToHand(player)
 }
 
-// use direct import instead of dynamic import — prevents memory leaks
 window.broadcastTokenCreate = function(tokenId, tokenData, player) {
   import('./sync.js').then(m => m.broadcastTokenCreate(tokenId, tokenData, player))
 }
@@ -230,7 +239,7 @@ window.onRemoteCardFlipped = function({ player, zoneType, index, faceUp }) {
   renderField(player)
 }
 
-window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName, tokenData }) {
+window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName, tokenData, faceUp }) {
   setRemoteAction(true)
 
   if (tokenData) {
@@ -242,6 +251,7 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
 
   if (fromZone === 'monster' || fromZone === 'spell') {
     src[fromZone][parseInt(fromIndex)] = null
+    delete src.faceState[`${fromZone}-${fromIndex}`]
   } else {
     const i = src[fromZone].indexOf(cardName)
     if (i !== -1) src[fromZone].splice(i, 1)
@@ -250,6 +260,10 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       dst[toZone][toIndex] = cardName
+      // apply face state from broadcaster — this fixes face-down summon visibility
+      if (faceUp !== undefined) {
+        dst.faceState[`${toZone}-${toIndex}`] = faceUp
+      }
     }
   } else {
     dst[toZone].push(cardName)

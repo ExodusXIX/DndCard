@@ -59,6 +59,24 @@ export const board = {
   }
 }
 
+// ── FULL BOARD RESET ───────────────────────────────────────
+// Called when leaving the game — wipes all state so next session is clean
+export function resetBoard() {
+  ;['playerA', 'playerB'].forEach(p => {
+    board[p].monster = [null, null, null]
+    board[p].spell = [null, null, null]
+    board[p].deck = []
+    board[p].hand = []
+    board[p].gallows = []
+    board[p].extraDeck = []
+    board[p].faceState = {}
+    board[p].setFaceDown = {}
+  })
+  // clear token store
+  Object.keys(tokenStore).forEach(k => delete tokenStore[k])
+  tokenCounter = 0
+}
+
 let localPlayer = 'a'
 const loadedDeckNames = { a: '', b: '' }
 
@@ -110,16 +128,14 @@ function showContextMenu(x, y, items) {
   const vw = window.innerWidth
   const vh = window.innerHeight
 
-  // clamp so menu never gets cut off
   const clampedX = Math.min(x, vw - menuW - 8)
   const clampedY = Math.min(y, vh - menuH - 8)
 
   contextMenu.style.left = `${clampedX}px`
   contextMenu.style.top = `${clampedY}px`
 }
+
 // ── DRAG AND DROP ──────────────────────────────────────────
-// Uses event delegation on the board container instead of
-// individual zone elements — this way re-renders don't break listeners
 
 export function initDragAndDrop() {
   createContextMenu()
@@ -127,7 +143,6 @@ export function initDragAndDrop() {
   const boardScreen = document.getElementById('board')
   if (!boardScreen) return
 
-  // dragover — find the droptarget ancestor
   boardScreen.addEventListener('dragover', e => {
     const zone = e.target.closest('.droptarget')
     if (!zone) return
@@ -135,7 +150,6 @@ export function initDragAndDrop() {
     zone.classList.add('drag-over')
   })
 
-  // dragleave — only remove highlight when leaving the zone entirely
   boardScreen.addEventListener('dragleave', e => {
     const zone = e.target.closest('.droptarget')
     if (!zone) return
@@ -144,7 +158,6 @@ export function initDragAndDrop() {
     }
   })
 
-  // drop — find the droptarget ancestor and handle the drop
   boardScreen.addEventListener('drop', e => {
     const zone = e.target.closest('.droptarget')
     if (!zone) return
@@ -170,6 +183,9 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   // save face state BEFORE removing from source
   const savedFaceState = src.faceState[`${fromZone}-${fromIndex}`] ?? true
 
+  // check if hand card is queued face down BEFORE removing
+  const playFaceDown = fromZone === 'hand' && src.setFaceDown[cardName] === true
+
   // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
     const key = `${fromZone}-${fromIndex}`
@@ -190,8 +206,8 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
             : true
         if (canAfford) {
           dst[toZone][toIndex] = cardName
-          const playFaceDown = src.setFaceDown[cardName] === true
-          dst.faceState[`${toZone}-${toIndex}`] = !playFaceDown
+          const faceUp = !playFaceDown
+          dst.faceState[`${toZone}-${toIndex}`] = faceUp
           delete src.setFaceDown[cardName]
           if (!card.isToken && typeof window.onCardPlayed === 'function') {
             window.onCardPlayed(toPlayer, cardName)
@@ -220,6 +236,10 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
 
   if (!isRemoteAction) {
     const payload = { fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }
+    // broadcast face state so opponent renders correctly
+    if (toZone === 'monster' || toZone === 'spell') {
+      payload.faceUp = dst.faceState[`${toZone}-${toIndex}`] ?? true
+    }
     if (card.isToken) payload.tokenData = { ...tokenStore[cardName] }
     broadcastCardMoved(payload)
   }
@@ -518,6 +538,7 @@ export function renderHand(player) {
 
   pb.hand.forEach((cardName) => {
     const card = getCard(cardName)
+    if (!card) return // guard against stale card references
     const el = document.createElement('div')
 
     if (player === localPlayer) {

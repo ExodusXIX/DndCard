@@ -1,6 +1,9 @@
 import { cardLibrary } from './cardLibrary.js'
 import { broadcastCardMoved, broadcastDeckLoaded, broadcastCardDrawn } from './sync.js'
-
+window.closeDeckPicker = function() {
+  const el = document.getElementById('deck-picker')
+  if (el) el.classList.add('hidden')
+}
 let isRemoteAction = false
 
 export function setRemoteAction(val) {

@@ -37,7 +37,9 @@ export function joinGame(roomId) {
       const n = localStorage.getItem(`${p}_name`)
       if (p && n) broadcastPlayerJoined(p, n)
     })
-
+    channel.on('broadcast', { event: 'card_flipped' }, ({ payload }) => {
+      if (typeof window.onRemoteCardFlipped === 'function') window.onRemoteCardFlipped(payload)
+    })
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') resolve()
     })
@@ -57,7 +59,9 @@ export function broadcastPlayerJoined(player, name) {
 export function broadcastBankRolled(value) {
   channel?.send({ type: 'broadcast', event: 'bank_rolled', payload: { value } })
 }
-
+export function broadcastFlip(player, zoneType, index, faceUp) {
+  channel?.send({ type: 'broadcast', event: 'card_flipped', payload: { player, zoneType, index, faceUp } })
+}
 export function broadcastHpChanged(player, value) {
   channel?.send({ type: 'broadcast', event: 'hp_changed', payload: { player, value } })
 }

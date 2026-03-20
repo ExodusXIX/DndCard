@@ -2,10 +2,10 @@ import './style.css'
 import { initDeckEditor, setupDeckDropzone } from './deckEditor.js'
 import { playerA, playerB, rollBank, spendFromBank, getRemainingBank, cardLibrary, gameState } from './game.js'
 import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, board, setRemoteAction } from './board.js'
-import { joinGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames } from './sync.js'
+import { joinGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames,broadcastFlip } from './sync.js'
 
 let localPlayer = 'a'
-
+window.broadcastFlip = broadcastFlip
 window.showScreen = function(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
   document.getElementById(screenId).classList.add('active')
@@ -55,8 +55,7 @@ window.showCardDetail = showCardDetail
 
 window.triggerRollBank = function() {
   const rolled = rollBank()
-  playerA.bankSpent = 0
-  playerB.bankSpent = 0
+  // rollBank() already resets bankSpent on both players
   document.getElementById('bank-value').textContent = rolled
   ;['a', 'b'].forEach(p => {
     const remainEl = document.getElementById(`${p}-bank-remaining`)
@@ -137,7 +136,9 @@ window.onRemotePlayerJoined = function({ player, name }) {
   if (bankLabel) bankLabel.textContent = name
 }
 
+// ── key fix: sync gameState.bank on the remote device so canAffordCard works
 window.onRemoteBankRolled = function({ value }) {
+  gameState.bank = value
   playerA.bankSpent = 0
   playerB.bankSpent = 0
   document.getElementById('bank-value').textContent = value
@@ -177,15 +178,17 @@ window.onRemoteFieldReset = function() {
   resetField('b')
   setRemoteAction(false)
 }
-
-// now uses direct imports instead of dynamic import — fixes spell visibility
+window.onRemoteCardFlipped = function({ player, zoneType, index, faceUp }) {
+  const pb = board[`player${player.toUpperCase()}`]
+  pb.faceState[`${zoneType}-${index}`] = faceUp
+  renderField(player)
+}
 window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }) {
   setRemoteAction(true)
 
   const src = board[`player${fromPlayer.toUpperCase()}`]
   const dst = board[`player${toPlayer.toUpperCase()}`]
 
-  // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
     src[fromZone][parseInt(fromIndex)] = null
   } else {
@@ -193,7 +196,6 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     if (i !== -1) src[fromZone].splice(i, 1)
   }
 
-  // place in destination
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       dst[toZone][toIndex] = cardName
@@ -202,7 +204,6 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     dst[toZone].push(cardName)
   }
 
-  // use direct imports — reliable, no stale module issues
   renderHand(fromPlayer)
   renderHand(toPlayer)
   renderField(fromPlayer)

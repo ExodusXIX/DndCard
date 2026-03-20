@@ -1,0 +1,630 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0a0f;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  font-family: 'Cinzel', serif;
+  color: #c8a84b;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* ── SCREENS ─────────────────────────────────────────────── */
+/* Only .active screen is visible at a time — showScreen() swaps the class */
+.screen {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── HOME ────────────────────────────────────────────────── */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.menu-btn {
+  background: transparent;
+  border: 1px solid rgba(200,168,75,0.5);
+  color: #c8a84b;
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 14px 48px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 260px;
+}
+
+.menu-btn:hover {
+  background: rgba(200,168,75,0.1);
+  border-color: rgba(200,168,75,0.9);
+  box-shadow: 0 0 20px rgba(200,168,75,0.3);
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: rgba(200,168,75,0.4);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: color 0.2s;
+}
+
+.back-btn:hover {
+  color: rgba(200,168,75,0.8);
+}
+
+/* ── SETUP ───────────────────────────────────────────────── */
+.setup-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 300px;
+}
+
+.setup-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: rgba(200,168,75,0.6);
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+.setup-input {
+  width: 100%;
+  background: rgba(200,168,75,0.05);
+  border: 1px solid rgba(200,168,75,0.3);
+  color: #c8a84b;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  outline: none;
+  border-radius: 4px;
+}
+
+.setup-input:focus {
+  border-color: rgba(200,168,75,0.7);
+  box-shadow: 0 0 12px rgba(200,168,75,0.2);
+}
+
+/* ── DECK EDITOR ─────────────────────────────────────────── */
+.editor-container {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  max-width: 900px;
+  padding: 20px;
+}
+
+.editor-library, .editor-deck {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editor-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: #c8a84b;
+  text-transform: uppercase;
+}
+
+/* ── CARD ITEMS (deck editor list) ───────────────────────── */
+.card-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: grab;
+  background: rgba(200,168,75,0.03);
+  transition: all 0.2s;
+}
+
+.card-item:hover {
+  border-color: rgba(200,168,75,0.5);
+  background: rgba(200,168,75,0.07);
+}
+
+.card-item-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: #c8a84b;
+  flex: 1;
+}
+
+.card-item-type {
+  font-family: 'IM Fell English', serif;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: capitalize;
+}
+
+.card-item-type.monster {
+  background: rgba(180,60,60,0.2);
+  color: #e07070;
+  border: 1px solid rgba(180,60,60,0.3);
+}
+
+.card-item-type.spell {
+  background: rgba(60,100,180,0.2);
+  color: #7090e0;
+  border: 1px solid rgba(60,100,180,0.3);
+}
+
+.card-item-cost {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  color: rgba(200,168,75,0.5);
+}
+
+.remove-card-btn {
+  background: transparent;
+  border: none;
+  color: rgba(200,168,75,0.4);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  transition: color 0.2s;
+}
+
+.remove-card-btn:hover {
+  color: #e07070;
+}
+
+#deck-cards {
+  min-height: 200px;
+  border: 1px dashed rgba(200,168,75,0.2);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+/* ── BOARD LAYOUT ────────────────────────────────────────── */
+.player-name-tag {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: rgba(200,168,75,0.6);
+  text-align: center;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.player-board {
+  background: #0f1218;
+  border: 1px solid rgba(200,168,75,0.3);
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+}
+
+/* Player B's entire board is flipped so they see it correctly from their side */
+#playerB {
+  transform: rotate(180deg);
+}
+
+.board-zones {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* 2 rows x 3 cols grid for monster/spell zones */
+.main-zones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 8px;
+  flex: 1;
+}
+
+.side-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100px;
+}
+
+/* ── ZONES ───────────────────────────────────────────────── */
+.zone {
+  border: 1px solid rgba(200,168,75,0.3);
+  border-radius: 8px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 8px;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  position: relative;
+}
+
+.zone-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: rgba(200,168,75,0.6);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.hp-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+}
+
+.hp-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.hp-buttons button {
+  background: rgba(200,168,75,0.15);
+  border: 1px solid rgba(200,168,75,0.4);
+  color: #c8a84b;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+}
+
+/* Deck count shown inside deck/gallows/extradeck zones */
+.deck-count {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: rgba(200,168,75,0.7);
+  margin-top: 8px;
+}
+
+/* Draw/View buttons sit below the deck zone, outside of it */
+.deck-btns {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* Highlight zone on dragover */
+.drag-over {
+  border-color: rgba(100,200,120,0.6) !important;
+  background: rgba(100,200,120,0.05) !important;
+  box-shadow: 0 0 12px rgba(100,200,120,0.2);
+}
+
+/* ── FIELD CARDS ─────────────────────────────────────────── */
+/* Cards rendered inside monster/spell zones on the field */
+.field-card {
+  width: 90%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.field-card.monster {
+  background: rgba(180,60,60,0.15);
+  border: 1px solid rgba(180,60,60,0.4);
+  color: #e07070;
+}
+
+.field-card.spell {
+  background: rgba(60,100,180,0.15);
+  border: 1px solid rgba(60,100,180,0.4);
+  color: #7090e0;
+}
+
+.field-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* ── HAND ────────────────────────────────────────────────── */
+.hand-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(200,168,75,0.2), transparent);
+  margin: 8px 0;
+  width: 100%;
+}
+
+.hand-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+  min-height: 50px;
+}
+
+/* Your own hand cards — visible and draggable */
+.hand-card {
+  background: rgba(200,168,75,0.08);
+  border: 1px solid rgba(200,168,75,0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  color: #c8a84b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hand-card:hover {
+  background: rgba(200,168,75,0.15);
+  border-color: rgba(200,168,75,0.6);
+}
+
+/* Opponent's hand cards — hidden, shown as blank rectangles */
+.hand-card.face-down {
+  background: rgba(50,40,20,0.4);
+  border-color: rgba(200,168,75,0.15);
+  color: transparent;
+  cursor: default;
+  width: 40px;
+}
+
+/* ── DIVIDER ─────────────────────────────────────────────── */
+.divider {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(200,168,75,0.6), transparent);
+  box-shadow: 0 0 12px rgba(200,168,75,0.4), 0 0 24px rgba(200,168,75,0.2);
+}
+
+/* ── MIDDLE NAV ──────────────────────────────────────────── */
+.board-nav {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 16px;
+  width: 100%;
+}
+/* Reset + Leave stacked on the left */
+.leave-reset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* ── BANK ────────────────────────────────────────────────── */
+/* Center orb shows the universal rolled bank value */
+.bank-display {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.bank-orb {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(200,168,75,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.2rem;
+  color: #c8a84b;
+  box-shadow: 0 0 20px rgba(200,168,75,0.3), inset 0 0 20px rgba(200,168,75,0.05);
+  transition: all 0.3s;
+}
+
+/* Pulse animation when bank is rolled */
+.bank-orb.orb-roll {
+  box-shadow: 0 0 40px rgba(200,168,75,0.8), inset 0 0 30px rgba(200,168,75,0.2);
+  transform: scale(1.15);
+}
+
+/* Per-player bank panel on the right side of the nav */
+.player-bank {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.player-bank-half {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+/* Player B's bank section is rotated so B can read it from their side of the table */
+.player-bank-half.rotated {
+  transform: rotate(180deg);
+}
+
+.bank-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: rgba(200,168,75,0.4);
+  text-transform: uppercase;
+}
+
+.bank-remaining {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.1rem;
+  color: #c8a84b;
+}
+
+/* Shows summon success/failure message after a card is played */
+.bank-status {
+  font-family: 'IM Fell English', serif;
+  font-size: 0.7rem;
+  text-align: center;
+  min-height: 1em;
+}
+
+/* ── ZONE BUTTONS ────────────────────────────────────────── */
+.zone-btn {
+  background: transparent;
+  border: 1px solid rgba(200,168,75,0.25);
+  color: rgba(200,168,75,0.6);
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.2s;
+}
+
+.zone-btn:hover {
+  border-color: rgba(200,168,75,0.6);
+  color: #c8a84b;
+}
+
+/* ── CARD DETAIL PANEL ───────────────────────────────────── */
+/* Fixed panel on the left — shows clicked card's stats */
+.card-detail {
+  position: fixed;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  width: 180px;
+  background: #0f1218;
+  border: 1px solid rgba(200,168,75,0.4);
+  border-radius: 12px;
+  padding: 20px 16px;
+  z-index: 100;
+  box-shadow: 0 0 30px rgba(200,168,75,0.15);
+}
+
+.card-detail.hidden { display: none; }
+
+.card-detail-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(200,168,75,0.5);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.card-detail-type {
+  font-family: 'IM Fell English', serif;
+  font-size: 0.65rem;
+  color: rgba(200,168,75,0.5);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.card-detail-name {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.75rem;
+  color: #c8a84b;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.card-detail-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-block {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(200,168,75,0.1);
+  padding-bottom: 6px;
+}
+
+.stat-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: rgba(200,168,75,0.5);
+}
+
+.stat-value {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: #c8a84b;
+}
+
+/* ── POPUPS ──────────────────────────────────────────────── */
+/* Full screen overlay for deck picker, deck viewer, pile viewer */
+.popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.popup.hidden { display: none; }
+
+.popup-inner {
+  background: #0f1218;
+  border: 1px solid rgba(200,168,75,0.4);
+  border-radius: 12px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
+}

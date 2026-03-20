@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Card Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
+    <script type="module" crossorigin src="/DndCard/assets/index-C_dDLTJo.js"></script>
+    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-d4JWXmpR.css">
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ── HOME SCREEN ──────────────────────────────────── -->
+      <div class="screen active" id="home">
+        <div class="home-container">
+          <button class="menu-btn" onclick="showScreen('setup')">Play</button>
+          <button class="menu-btn" onclick="showScreen('deck-editor')">Deck Builder</button>
+        </div>
+      </div>
+
+      <!-- ── SETUP SCREEN ─────────────────────────────────── -->
+      <!-- Each player enters their name and picks A or B before entering the board -->
+      <div class="screen" id="setup">
+        <div class="home-container">
+          <div class="setup-form">
+            <label class="setup-label">Who are you?</label>
+            <select class="setup-input" id="player-select">
+              <option value="a">Player A</option>
+              <option value="b">Player B</option>
+            </select>
+            <label class="setup-label">Enter your name</label>
+            <input class="setup-input" type="text" id="player-name" placeholder="Your name..." />
+            <label class="setup-label">Room Code</label>
+            <input class="setup-input" type="text" id="room-code" placeholder="e.g. room1234..." />
+            <button class="menu-btn" onclick="enterGame()">Enter the Realm</button>
+            <button class="back-btn" onclick="showScreen('home')">Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DECK EDITOR SCREEN ───────────────────────────── -->
+      <!-- Build and save named decks to localStorage -->
+      <div class="screen" id="deck-editor">
+        <div class="editor-container">
+          <div class="editor-library">
+            <h2 class="editor-title">Card Library</h2>
+            <input class="setup-input" type="text" id="card-search" placeholder="Search cards..." />
+            <div id="library-cards"></div>
+          </div>
+          <div class="editor-deck">
+            <h2 class="editor-title">Your Deck</h2>
+            <!-- Drag cards from library into this drop zone -->
+            <div id="deck-cards"></div>
+            <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." />
+            <button class="menu-btn" onclick="saveDeck()">Save Deck</button>
+            <!-- Saved decks list renders here dynamically -->
+            <div id="saved-decks-list"></div>
+          </div>
+        </div>
+        <button class="back-btn" onclick="showScreen('home')">Back</button>
+      </div>
+
+      <!-- ── BOARD SCREEN ──────────────────────────────────── -->
+      <div class="screen" id="board">
+
+        <!-- Card detail panel — fixed to left side, shown on card click -->
+        <div id="card-detail" class="card-detail hidden">
+          <button class="card-detail-close" onclick="closeCardDetail()">✕</button>
+          <p class="card-detail-type" id="detail-type"></p>
+          <h2 class="card-detail-name" id="detail-name"></h2>
+          <div class="card-detail-stats">
+            <div class="stat-block">
+              <span class="stat-label">ATK</span>
+              <span class="stat-value" id="detail-attack"></span>
+            </div>
+            <div class="stat-block">
+              <span class="stat-label">DEF</span>
+              <span class="stat-value" id="detail-defense"></span>
+            </div>
+            <div class="stat-block">
+              <span class="stat-label">COST</span>
+              <span class="stat-value" id="detail-cost"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deck picker popup — shown when choosing/replacing a deck -->
+        <div id="deck-picker" class="popup hidden">
+          <div class="popup-inner">
+            <h3 class="editor-title">Choose a Deck</h3>
+            <div id="deck-picker-list"></div>
+            <button class="back-btn" onclick="closeDeckPicker()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Deck viewer popup — shows all cards currently in a player's deck -->
+        <div id="deck-viewer" class="popup hidden">
+          <div class="popup-inner">
+            <h3 class="editor-title" id="deck-viewer-title">Deck Contents</h3>
+            <div id="deck-viewer-list"></div>
+            <button class="back-btn" onclick="closeDeckViewer()">Close</button>
+          </div>
+        </div>
+
+        <!-- Pile viewer popup — used for both gallows and extra deck -->
+        <!-- Each card has a "To Hand" button to retrieve it -->
+        <div id="pile-viewer" class="popup hidden">
+          <div class="popup-inner">
+            <h3 class="editor-title" id="pile-viewer-title"></h3>
+            <div id="pile-viewer-list"></div>
+            <button class="back-btn" onclick="closePileViewer()">Close</button>
+          </div>
+        </div>
+
+        <!-- ── PLAYER B BOARD (top) ──────────────────────── -->
+        <!-- This entire board is rotated 180deg via CSS so it faces Player B
+             sitting across the table. Hand is at the BOTTOM of this div
+             so after rotation it appears at the TOP for Player B. -->
+        <div class="player-board" id="playerB">
+          <div class="player-name-tag" id="b-name">Player B</div>
+          <div class="board-zones">
+            <div class="side-zones">
+              <!-- Click zone label to open pile viewer for all cards inside -->
+              <div class="zone droptarget" id="b-extradeck" data-zone="extraDeck" data-player="b" onclick="openPileViewerGlobal('b', 'extraDeck')">
+                <span class="zone-label">Extra Deck</span>
+                <span class="deck-count" id="b-extradeck-count">0</span>
+              </div>
+              <div class="zone droptarget" id="b-gallows" data-zone="gallows" data-player="b" onclick="openPileViewerGlobal('b', 'gallows')">
+                <span class="zone-label">Gallows</span>
+                <span class="deck-count" id="b-gallows-count">0</span>
+              </div>
+            </div>
+            <!-- 2x3 main play grid: row 1 = monsters, row 2 = spells -->
+            <div class="main-zones">
+              <div class="zone monster-zone droptarget" id="b-monster-0" data-zone="monster" data-index="0" data-player="b"></div>
+              <div class="zone monster-zone droptarget" id="b-monster-1" data-zone="monster" data-index="1" data-player="b"></div>
+              <div class="zone monster-zone droptarget" id="b-monster-2" data-zone="monster" data-index="2" data-player="b"></div>
+              <div class="zone spell-zone droptarget" id="b-spell-0" data-zone="spell" data-index="0" data-player="b"></div>
+              <div class="zone spell-zone droptarget" id="b-spell-1" data-zone="spell" data-index="1" data-player="b"></div>
+              <div class="zone spell-zone droptarget" id="b-spell-2" data-zone="spell" data-index="2" data-player="b"></div>
+            </div>
+            <div class="side-zones">
+              <!-- Deck zone: click to load deck if empty, draw if loaded -->
+              <div class="zone droptarget" id="b-deck" data-zone="deck" data-player="b">
+                <span class="zone-label">Deck</span>
+                <span class="deck-count" id="b-deck-count">0</span>
+              </div>
+              <!-- Deck buttons live outside the zone so they don't interfere with drop -->
+              <div class="deck-btns">
+                <button class="zone-btn" onclick="onDeckClick('b')">Draw</button>
+                <button class="zone-btn" onclick="viewDeck('b')">View</button>
+              </div>
+              <div class="zone hp-zone" id="b-hp">
+                <span class="zone-label">HP</span>
+                <span id="b-hp-value">10</span>
+                <div class="hp-buttons">
+                  <button onclick="changeHp('b', 1)">+</button>
+                  <button onclick="changeHp('b', -1)">-</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Hand at BOTTOM of div = TOP after 180deg rotation for Player B -->
+          <div class="hand-divider"></div>
+          <div class="hand-zone droptarget" id="b-hand" data-zone="hand" data-player="b"></div>
+        </div>
+
+        <!-- ── MIDDLE NAV ─────────────────────────────────── -->
+        <div class="divider"></div>
+        <div class="board-nav">
+
+          <!-- Left: leave + reset (stacked vertically) -->
+          <div class="leave-reset">
+            <button class="zone-btn" onclick="triggerResetField()">Reset Field</button>
+            <button class="back-btn" onclick="showScreen('home')">⬅ Leave Game</button>
+          </div>
+
+          <!-- Center: universal bank orb + roll button -->
+          <!-- Bank is shared — both players spend from the same rolled value -->
+          <div class="bank-display">
+            <div class="bank-orb" id="bank-orb">
+              <span id="bank-value">—</span>
+            </div>
+            <button class="zone-btn" onclick="triggerRollBank()">Roll Bank</button>
+          </div>
+
+          <!-- Right: per-player bank trackers -->
+          <!-- B is on top (closer to B's board), A is on bottom (closer to A's board) -->
+          <!-- B's label/remaining/status are rotated 180deg so B can read them -->
+          <div class="player-bank">
+            <div class="player-bank-half rotated">
+              <span class="bank-label" id="b-bank-label">Player B</span>
+              <span class="bank-remaining" id="b-bank-remaining">—</span>
+              <span class="bank-status" id="b-bank-status"></span>
+              <button class="zone-btn" onclick="chooseDeck('b')">Deck</button>
+              <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
+            </div>
+            <div class="player-bank-half">
+              <span class="bank-label" id="a-bank-label">Player A</span>
+              <span class="bank-remaining" id="a-bank-remaining">—</span>
+              <span class="bank-status" id="a-bank-status"></span>
+              <button class="zone-btn" onclick="chooseDeck('a')">Deck</button>
+              <button class="zone-btn" onclick="triggerShuffle('a')">Shuffle</button>
+            </div>
+          </div>
+
+        </div>
+        <div class="divider"></div>
+
+        <!-- ── PLAYER A BOARD (bottom) ───────────────────── -->
+        <!-- No rotation — this is the default orientation -->
+        <div class="player-board" id="playerA">
+          <div class="player-name-tag" id="a-name">Player A</div>
+          <div class="board-zones">
+            <div class="side-zones">
+              <div class="zone droptarget" id="a-extradeck" data-zone="extraDeck" data-player="a" onclick="openPileViewerGlobal('a', 'extraDeck')">
+                <span class="zone-label">Extra Deck</span>
+                <span class="deck-count" id="a-extradeck-count">0</span>
+              </div>
+              <div class="zone droptarget" id="a-gallows" data-zone="gallows" data-player="a" onclick="openPileViewerGlobal('a', 'gallows')">
+                <span class="zone-label">Gallows</span>
+                <span class="deck-count" id="a-gallows-count">0</span>
+              </div>
+            </div>
+            <div class="main-zones">
+              <div class="zone monster-zone droptarget" id="a-monster-0" data-zone="monster" data-index="0" data-player="a"></div>
+              <div class="zone monster-zone droptarget" id="a-monster-1" data-zone="monster" data-index="1" data-player="a"></div>
+              <div class="zone monster-zone droptarget" id="a-monster-2" data-zone="monster" data-index="2" data-player="a"></div>
+              <div class="zone spell-zone droptarget" id="a-spell-0" data-zone="spell" data-index="0" data-player="a"></div>
+              <div class="zone spell-zone droptarget" id="a-spell-1" data-zone="spell" data-index="1" data-player="a"></div>
+              <div class="zone spell-zone droptarget" id="a-spell-2" data-zone="spell" data-index="2" data-player="a"></div>
+            </div>
+            <div class="side-zones">
+              <div class="zone droptarget" id="a-deck" data-zone="deck" data-player="a">
+                <span class="zone-label">Deck</span>
+                <span class="deck-count" id="a-deck-count">0</span>
+              </div>
+              <div class="deck-btns">
+                <button class="zone-btn" onclick="onDeckClick('a')">Draw</button>
+                <button class="zone-btn" onclick="viewDeck('a')">View</button>
+              </div>
+              <div class="zone hp-zone" id="a-hp">
+                <span class="zone-label">HP</span>
+                <span id="a-hp-value">10</span>
+                <div class="hp-buttons">
+                  <button onclick="changeHp('a', 1)">+</button>
+                  <button onclick="changeHp('a', -1)">-</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Hand at BOTTOM of div = bottom of screen for Player A -->
+          <div class="hand-divider"></div>
+          <div class="hand-zone droptarget" id="a-hand" data-zone="hand" data-player="a"></div>
+        </div>
+
+      </div>
+    </div>
+  </body>
+</html>

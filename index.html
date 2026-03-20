@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Card Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
-    <script type="module" crossorigin src="/DndCard/assets/index-DdOdOpZH.js"></script>
-    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-siZ60iSF.css">
+    <script type="module" crossorigin src="/DndCard/assets/index-DYXEYfR2.js"></script>
+    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-BvVFDubk.css">
   </head>
   <body>
     <div id="app">
@@ -60,7 +60,7 @@
       <!-- ── BOARD SCREEN ──────────────────────────────────── -->
       <div class="screen" id="board">
 
-        <!-- Card detail panel — fixed to left side, shown on card click -->
+        <!-- Card detail panel -->
         <div id="card-detail" class="card-detail hidden">
           <button class="card-detail-close" onclick="closeCardDetail()">✕</button>
           <p class="card-detail-type" id="detail-type"></p>
@@ -99,7 +99,7 @@
           </div>
         </div>
 
-        <!-- Pile viewer popup — gallows and extra deck -->
+        <!-- Pile viewer popup -->
         <div id="pile-viewer" class="popup hidden">
           <div class="popup-inner">
             <h3 class="editor-title" id="pile-viewer-title"></h3>
@@ -108,77 +108,111 @@
           </div>
         </div>
 
-        <!-- ── PLAYER B BOARD (top) ──────────────────────── -->
-        <!-- Rotated 180deg by default so B can read it from across the table.
-             When playing as B, perspective-b class removes this rotation
-             and rotates Player A's board instead. -->
-        <div class="player-board" id="playerB">
-          <div class="player-name-tag" id="b-name">Player B</div>
-          <div class="board-zones">
-            <div class="side-zones">
-              <div class="zone droptarget" id="b-extradeck" data-zone="extraDeck" data-player="b" onclick="openPileViewerGlobal('b', 'extraDeck')">
-                <span class="zone-label">Extra Deck</span>
-                <span class="deck-count" id="b-extradeck-count">0</span>
-              </div>
-              <div class="zone droptarget" id="b-gallows" data-zone="gallows" data-player="b" onclick="openPileViewerGlobal('b', 'gallows')">
-                <span class="zone-label">Gallows</span>
-                <span class="deck-count" id="b-gallows-count">0</span>
-              </div>
-            </div>
-            <div class="main-zones">
-              <div class="zone monster-zone droptarget" id="b-monster-0" data-zone="monster" data-index="0" data-player="b"></div>
-              <div class="zone monster-zone droptarget" id="b-monster-1" data-zone="monster" data-index="1" data-player="b"></div>
-              <div class="zone monster-zone droptarget" id="b-monster-2" data-zone="monster" data-index="2" data-player="b"></div>
-              <div class="zone spell-zone droptarget" id="b-spell-0" data-zone="spell" data-index="0" data-player="b"></div>
-              <div class="zone spell-zone droptarget" id="b-spell-1" data-zone="spell" data-index="1" data-player="b"></div>
-              <div class="zone spell-zone droptarget" id="b-spell-2" data-zone="spell" data-index="2" data-player="b"></div>
-            </div>
-            <div class="side-zones">
-              <div class="zone droptarget" id="b-deck" data-zone="deck" data-player="b">
-                <span class="zone-label">Deck</span>
-                <span class="deck-count" id="b-deck-count">0</span>
-              </div>
-              <div class="deck-btns">
-                <button class="zone-btn" onclick="onDeckClick('b')">Draw</button>
-                <button class="zone-btn" onclick="viewDeck('b')">View</button>
-              </div>
-              <div class="zone hp-zone" id="b-hp">
-                <span class="zone-label">HP</span>
-                <span id="b-hp-value">10</span>
-                <div class="hp-buttons">
-                  <button onclick="changeHp('b', 1)">+</button>
-                  <button onclick="changeHp('b', -1)">-</button>
+        <!-- ── BOARD AREA (left) + NAV PANEL (right) ──────── -->
+        <div class="board-layout">
+
+          <!-- ── BOARDS COLUMN ───────────────────────────── -->
+          <div class="boards-column">
+
+            <!-- Player B board -->
+            <div class="player-board" id="playerB">
+              <div class="player-name-tag" id="b-name">Player B</div>
+              <div class="board-zones">
+                <div class="side-zones">
+                  <div class="zone droptarget" id="b-extradeck" data-zone="extraDeck" data-player="b" onclick="openPileViewerGlobal('b', 'extraDeck')">
+                    <span class="zone-label">Extra Deck</span>
+                    <span class="deck-count" id="b-extradeck-count">0</span>
+                  </div>
+                  <div class="zone droptarget" id="b-gallows" data-zone="gallows" data-player="b" onclick="openPileViewerGlobal('b', 'gallows')">
+                    <span class="zone-label">Gallows</span>
+                    <span class="deck-count" id="b-gallows-count">0</span>
+                  </div>
+                </div>
+                <div class="main-zones">
+                  <div class="zone monster-zone droptarget" id="b-monster-0" data-zone="monster" data-index="0" data-player="b"></div>
+                  <div class="zone monster-zone droptarget" id="b-monster-1" data-zone="monster" data-index="1" data-player="b"></div>
+                  <div class="zone monster-zone droptarget" id="b-monster-2" data-zone="monster" data-index="2" data-player="b"></div>
+                  <div class="zone spell-zone droptarget" id="b-spell-0" data-zone="spell" data-index="0" data-player="b"></div>
+                  <div class="zone spell-zone droptarget" id="b-spell-1" data-zone="spell" data-index="1" data-player="b"></div>
+                  <div class="zone spell-zone droptarget" id="b-spell-2" data-zone="spell" data-index="2" data-player="b"></div>
+                </div>
+                <div class="side-zones">
+                  <div class="zone droptarget" id="b-deck" data-zone="deck" data-player="b">
+                    <span class="zone-label">Deck</span>
+                    <span class="deck-count" id="b-deck-count">0</span>
+                  </div>
+                  <div class="deck-btns">
+                    <button class="zone-btn" onclick="onDeckClick('b')">Draw</button>
+                    <button class="zone-btn" onclick="viewDeck('b')">View</button>
+                  </div>
+                  <div class="zone hp-zone" id="b-hp">
+                    <span class="zone-label">HP</span>
+                    <span id="b-hp-value">10</span>
+                    <div class="hp-buttons">
+                      <button onclick="changeHp('b', 1)">+</button>
+                      <button onclick="changeHp('b', -1)">-</button>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <div class="hand-divider"></div>
+              <div class="hand-zone droptarget" id="b-hand" data-zone="hand" data-player="b"></div>
             </div>
-          </div>
-          <!-- Hand at BOTTOM of div = TOP after 180deg rotation for Player B -->
-          <div class="hand-divider"></div>
-          <div class="hand-zone droptarget" id="b-hand" data-zone="hand" data-player="b"></div>
-        </div>
 
-        <!-- ── MIDDLE NAV ─────────────────────────────────── -->
-        <div class="divider"></div>
-        <div class="board-nav">
+            <!-- Divider line between boards -->
+            <div class="board-divider"></div>
 
-          <!-- Left: reset + leave -->
-          <div class="leave-reset">
-            <button class="zone-btn" onclick="triggerResetField()">Reset Field</button>
-            <button class="back-btn" onclick="showScreen('home')">⬅ Leave Game</button>
-          </div>
-
-          <!-- Center: bank orb -->
-          <div class="bank-display">
-            <div class="bank-orb" id="bank-orb">
-              <span id="bank-value">—</span>
+            <!-- Player A board -->
+            <div class="player-board" id="playerA">
+              <div class="player-name-tag" id="a-name">Player A</div>
+              <div class="board-zones">
+                <div class="side-zones">
+                  <div class="zone droptarget" id="a-extradeck" data-zone="extraDeck" data-player="a" onclick="openPileViewerGlobal('a', 'extraDeck')">
+                    <span class="zone-label">Extra Deck</span>
+                    <span class="deck-count" id="a-extradeck-count">0</span>
+                  </div>
+                  <div class="zone droptarget" id="a-gallows" data-zone="gallows" data-player="a" onclick="openPileViewerGlobal('a', 'gallows')">
+                    <span class="zone-label">Gallows</span>
+                    <span class="deck-count" id="a-gallows-count">0</span>
+                  </div>
+                </div>
+                <div class="main-zones">
+                  <div class="zone monster-zone droptarget" id="a-monster-0" data-zone="monster" data-index="0" data-player="a"></div>
+                  <div class="zone monster-zone droptarget" id="a-monster-1" data-zone="monster" data-index="1" data-player="a"></div>
+                  <div class="zone monster-zone droptarget" id="a-monster-2" data-zone="monster" data-index="2" data-player="a"></div>
+                  <div class="zone spell-zone droptarget" id="a-spell-0" data-zone="spell" data-index="0" data-player="a"></div>
+                  <div class="zone spell-zone droptarget" id="a-spell-1" data-zone="spell" data-index="1" data-player="a"></div>
+                  <div class="zone spell-zone droptarget" id="a-spell-2" data-zone="spell" data-index="2" data-player="a"></div>
+                </div>
+                <div class="side-zones">
+                  <div class="zone droptarget" id="a-deck" data-zone="deck" data-player="a">
+                    <span class="zone-label">Deck</span>
+                    <span class="deck-count" id="a-deck-count">0</span>
+                  </div>
+                  <div class="deck-btns">
+                    <button class="zone-btn" onclick="onDeckClick('a')">Draw</button>
+                    <button class="zone-btn" onclick="viewDeck('a')">View</button>
+                  </div>
+                  <div class="zone hp-zone" id="a-hp">
+                    <span class="zone-label">HP</span>
+                    <span id="a-hp-value">10</span>
+                    <div class="hp-buttons">
+                      <button onclick="changeHp('a', 1)">+</button>
+                      <button onclick="changeHp('a', -1)">-</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="hand-divider"></div>
+              <div class="hand-zone droptarget" id="a-hand" data-zone="hand" data-player="a"></div>
             </div>
-            <button class="zone-btn" onclick="triggerRollBank()">Roll Bank</button>
+
           </div>
 
-          <!-- Right: per-player bank trackers -->
-          <!-- B half is on top and rotated by default so B can read it.
-               perspective-b class swaps which half is rotated. -->
-          <div class="player-bank">
+          <!-- ── NAV PANEL (right strip) ─────────────────── -->
+          <div class="nav-panel">
+
+            <!-- B bank (top — rotated so B can read it) -->
             <div class="player-bank-half rotated" id="b-bank-half">
               <span class="bank-label" id="b-bank-label">Player B</span>
               <span class="bank-remaining" id="b-bank-remaining">—</span>
@@ -186,6 +220,18 @@
               <button class="zone-btn" onclick="chooseDeck('b')">Deck</button>
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
+
+            <!-- Center: orb + controls -->
+            <div class="nav-center">
+              <div class="bank-orb" id="bank-orb">
+                <span id="bank-value">—</span>
+              </div>
+              <button class="zone-btn" onclick="triggerRollBank()">Roll Bank</button>
+              <button class="zone-btn" onclick="triggerResetField()">Reset Field</button>
+              <button class="back-btn" onclick="showScreen('home')">⬅ Leave</button>
+            </div>
+
+            <!-- A bank (bottom) -->
             <div class="player-bank-half" id="a-bank-half">
               <span class="bank-label" id="a-bank-label">Player A</span>
               <span class="bank-remaining" id="a-bank-remaining">—</span>
@@ -193,54 +239,9 @@
               <button class="zone-btn" onclick="chooseDeck('a')">Deck</button>
               <button class="zone-btn" onclick="triggerShuffle('a')">Shuffle</button>
             </div>
+
           </div>
 
-        </div>
-        <div class="divider"></div>
-
-        <!-- ── PLAYER A BOARD (bottom) ───────────────────── -->
-        <div class="player-board" id="playerA">
-          <div class="player-name-tag" id="a-name">Player A</div>
-          <div class="board-zones">
-            <div class="side-zones">
-              <div class="zone droptarget" id="a-extradeck" data-zone="extraDeck" data-player="a" onclick="openPileViewerGlobal('a', 'extraDeck')">
-                <span class="zone-label">Extra Deck</span>
-                <span class="deck-count" id="a-extradeck-count">0</span>
-              </div>
-              <div class="zone droptarget" id="a-gallows" data-zone="gallows" data-player="a" onclick="openPileViewerGlobal('a', 'gallows')">
-                <span class="zone-label">Gallows</span>
-                <span class="deck-count" id="a-gallows-count">0</span>
-              </div>
-            </div>
-            <div class="main-zones">
-              <div class="zone monster-zone droptarget" id="a-monster-0" data-zone="monster" data-index="0" data-player="a"></div>
-              <div class="zone monster-zone droptarget" id="a-monster-1" data-zone="monster" data-index="1" data-player="a"></div>
-              <div class="zone monster-zone droptarget" id="a-monster-2" data-zone="monster" data-index="2" data-player="a"></div>
-              <div class="zone spell-zone droptarget" id="a-spell-0" data-zone="spell" data-index="0" data-player="a"></div>
-              <div class="zone spell-zone droptarget" id="a-spell-1" data-zone="spell" data-index="1" data-player="a"></div>
-              <div class="zone spell-zone droptarget" id="a-spell-2" data-zone="spell" data-index="2" data-player="a"></div>
-            </div>
-            <div class="side-zones">
-              <div class="zone droptarget" id="a-deck" data-zone="deck" data-player="a">
-                <span class="zone-label">Deck</span>
-                <span class="deck-count" id="a-deck-count">0</span>
-              </div>
-              <div class="deck-btns">
-                <button class="zone-btn" onclick="onDeckClick('a')">Draw</button>
-                <button class="zone-btn" onclick="viewDeck('a')">View</button>
-              </div>
-              <div class="zone hp-zone" id="a-hp">
-                <span class="zone-label">HP</span>
-                <span id="a-hp-value">10</span>
-                <div class="hp-buttons">
-                  <button onclick="changeHp('a', 1)">+</button>
-                  <button onclick="changeHp('a', -1)">-</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="hand-divider"></div>
-          <div class="hand-zone droptarget" id="a-hand" data-zone="hand" data-player="a"></div>
         </div>
 
       </div>

@@ -628,3 +628,45 @@ body {
   max-height: 80vh;
   overflow-y: auto;
 }
+/* ── PERSPECTIVE B ───────────────────────────────────────── */
+/* When playing as Player B, flip the entire board layout so
+   Player B's board appears at the bottom facing them */
+
+#board.perspective-b {
+  display: flex;
+  flex-direction: column;
+}
+
+/* B's board moves to bottom, no rotation */
+#board.perspective-b #playerB {
+  transform: none;
+  order: 5;
+}
+
+/* A's board moves to top, gets rotated instead */
+#board.perspective-b #playerA {
+  transform: rotate(180deg);
+  order: 1;
+}
+
+/* reorder the dividers and nav to match */
+#board.perspective-b .divider:first-of-type {
+  order: 2;
+}
+
+#board.perspective-b .board-nav {
+  order: 3;
+}
+
+#board.perspective-b .divider:last-of-type {
+  order: 4;
+}
+
+/* flip which bank half is rotated */
+#board.perspective-b #b-bank-half {
+  transform: none;
+}
+
+#board.perspective-b #a-bank-half {
+  transform: rotate(180deg);
+}

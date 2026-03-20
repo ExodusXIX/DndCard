@@ -2,7 +2,7 @@ import './style.css'
 import { initDeckEditor, setupDeckDropzone } from './deckEditor.js'
 import { playerA, playerB, rollBank, spendFromBank, getRemainingBank, cardLibrary, gameState } from './game.js'
 import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, board, setRemoteAction } from './board.js'
-import { joinGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined } from './sync.js'
+import { joinGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames } from './sync.js'
 
 let localPlayer = 'a'
 
@@ -30,8 +30,17 @@ window.enterGame = function() {
   const bankLabel = document.getElementById(`${player}-bank-label`)
   if (bankLabel) bankLabel.textContent = name
 
-  // join the shared realtime room then broadcast name
+  // flip the layout if playing as Player B
+  const boardEl = document.getElementById('board')
+  if (player === 'b') {
+    boardEl.classList.add('perspective-b')
+  } else {
+    boardEl.classList.remove('perspective-b')
+  }
+
+  // join room, then request other player's name, then broadcast own name
   joinGame(roomCode)
+  setTimeout(() => broadcastRequestNames(), 1000)
   broadcastPlayerJoined(player, name)
 
   showScreen('board')
@@ -127,7 +136,6 @@ window.triggerResetField = function() {
 
 // ── REALTIME RECEIVERS ────────────────────────────────────
 
-// another player joined — update their name on this device
 window.onRemotePlayerJoined = function({ player, name }) {
   document.getElementById(`${player}-name`).textContent = name
   const bankLabel = document.getElementById(`${player}-bank-label`)
@@ -156,7 +164,6 @@ window.onRemoteHpChanged = function({ player, value }) {
   if (hpEl) hpEl.textContent = value
 }
 
-// wrap in setRemoteAction to prevent broadcast loop
 window.onRemoteCardDrawn = function({ player }) {
   setRemoteAction(true)
   drawCard(player)
@@ -176,13 +183,11 @@ window.onRemoteFieldReset = function() {
   setRemoteAction(false)
 }
 
-// apply a remote card move directly to board state without re-broadcasting
 window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }) {
   setRemoteAction(true)
   const src = board[`player${fromPlayer.toUpperCase()}`]
   const dst = board[`player${toPlayer.toUpperCase()}`]
 
-  // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
     src[fromZone][parseInt(fromIndex)] = null
   } else {
@@ -190,7 +195,6 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     if (i !== -1) src[fromZone].splice(i, 1)
   }
 
-  // place in destination
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       dst[toZone][toIndex] = cardName
@@ -199,7 +203,6 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     dst[toZone].push(cardName)
   }
 
-  // re-render affected boards
   import('./board.js').then(m => {
     m.renderHand(fromPlayer)
     m.renderHand(toPlayer)

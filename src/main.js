@@ -1,7 +1,7 @@
 import './style.css'
 import { initDeckEditor, setupDeckDropzone } from './deckEditor.js'
 import { playerA, playerB, rollBank, spendFromBank, getRemainingBank, cardLibrary, gameState } from './game.js'
-import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, board, setRemoteAction } from './board.js'
+import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, board, setRemoteAction } from './board.js'
 import { joinGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames } from './sync.js'
 
 let localPlayer = 'a'
@@ -34,7 +34,6 @@ window.enterGame = async function() {
     boardEl.classList.remove('perspective-b')
   }
 
-  // wait for channel to be fully connected before broadcasting
   await joinGame(roomCode)
   broadcastPlayerJoined(player, name)
   broadcastRequestNames()
@@ -179,11 +178,14 @@ window.onRemoteFieldReset = function() {
   setRemoteAction(false)
 }
 
+// now uses direct imports instead of dynamic import — fixes spell visibility
 window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }) {
   setRemoteAction(true)
+
   const src = board[`player${fromPlayer.toUpperCase()}`]
   const dst = board[`player${toPlayer.toUpperCase()}`]
 
+  // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
     src[fromZone][parseInt(fromIndex)] = null
   } else {
@@ -191,6 +193,7 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     if (i !== -1) src[fromZone].splice(i, 1)
   }
 
+  // place in destination
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       dst[toZone][toIndex] = cardName
@@ -199,15 +202,14 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     dst[toZone].push(cardName)
   }
 
-  // import and call full renderAll for both players
-  import('./board.js').then(m => {
-    m.renderHand(fromPlayer)
-    m.renderHand(toPlayer)
-    m.renderField(fromPlayer)
-    m.renderField(toPlayer)
-  })
+  // use direct imports — reliable, no stale module issues
+  renderHand(fromPlayer)
+  renderHand(toPlayer)
+  renderField(fromPlayer)
+  renderField(toPlayer)
 
   setRemoteAction(false)
 }
+
 initDeckEditor()
 setupDeckDropzone()

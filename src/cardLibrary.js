@@ -1,6 +1,40 @@
-export const cardLibrary ={
-    "Doro": {name:"Doro",type: "monster", attack: 1, defense: 2,cost: 1},
-    "Doro's Roar": {name:"Doro's Roar",type: "spell", attack: 0, defense: 0, cost: 2},
-    "Usagi": {name:"Usagi", type: "monster", attack: 0, defense: 6, cost: 2,}
+export const cardLibrary = {
+  // ── MONSTERS ──────────────────────────────────────────
+  "Doro": { name: "Doro", type: "monster", attack: 1, defense: 2, cost: 1 },
+  "Usagi": { name: "Usagi", type: "monster", attack: 0, defense: 6, cost: 0 },
+  "Iron Golem": { name: "Iron Golem", type: "monster", attack: 4, defense: 5, cost: 4 },
+  "Shadow Wraith": { name: "Shadow Wraith", type: "monster", attack: 5, defense: 2, cost: 3 },
+  "Stone Sentinel": { name: "Stone Sentinel", type: "monster", attack: 2, defense: 7, cost: 3 },
+  "Flame Drake": { name: "Flame Drake", type: "monster", attack: 6, defense: 3, cost: 5 },
+  "Void Stalker": { name: "Void Stalker", type: "monster", attack: 7, defense: 1, cost: 5 },
+  "Crystal Golem": { name: "Crystal Golem", type: "monster", attack: 3, defense: 8, cost: 5 },
+  "Bone Archer": { name: "Bone Archer", type: "monster", attack: 4, defense: 2, cost: 2 },
+  "Plague Rat": { name: "Plague Rat", type: "monster", attack: 2, defense: 1, cost: 1 },
+  "Thunder Boar": { name: "Thunder Boar", type: "monster", attack: 5, defense: 4, cost: 4 },
+  "Mire Toad": { name: "Mire Toad", type: "monster", attack: 1, defense: 4, cost: 1 },
+  "Ember Fox": { name: "Ember Fox", type: "monster", attack: 3, defense: 2, cost: 2 },
+  "Ancient Tortoise": { name: "Ancient Tortoise", type: "monster", attack: 1, defense: 9, cost: 4 },
+  "Rift Serpent": { name: "Rift Serpent", type: "monster", attack: 6, defense: 2, cost: 4 },
+  "Dusk Knight": { name: "Dusk Knight", type: "monster", attack: 5, defense: 5, cost: 5 },
+  "Mud Elemental": { name: "Mud Elemental", type: "monster", attack: 3, defense: 5, cost: 3 },
+  "Banshee": { name: "Banshee", type: "monster", attack: 4, defense: 1, cost: 2 },
+  "Granite Titan": { name: "Granite Titan", type: "monster", attack: 7, defense: 7, cost: 6 },
+  "Gloom Bat": { name: "Gloom Bat", type: "monster", attack: 2, defense: 2, cost: 1 },
 
-    }
+  // ── SPELLS ────────────────────────────────────────────
+  "Doro's Roar": { name: "Doro's Roar", type: "spell", attack: 0, defense: 0, cost: 2 },
+  "Fireball": { name: "Fireball", type: "spell", attack: 0, defense: 0, cost: 3 },
+  "Stone Wall": { name: "Stone Wall", type: "spell", attack: 0, defense: 0, cost: 2 },
+  "Dark Rift": { name: "Dark Rift", type: "spell", attack: 0, defense: 0, cost: 4 },
+  "Mend": { name: "Mend", type: "spell", attack: 0, defense: 0, cost: 1 },
+  "Phantom Strike": { name: "Phantom Strike", type: "spell", attack: 0, defense: 0, cost: 3 },
+  "Cursed Ground": { name: "Cursed Ground", type: "spell", attack: 0, defense: 0, cost: 2 },
+  "Veil of Shadow": { name: "Veil of Shadow", type: "spell", attack: 0, defense: 0, cost: 3 },
+  "Tremor": { name: "Tremor", type: "spell", attack: 0, defense: 0, cost: 2 },
+  "Ancient Seal": { name: "Ancient Seal", type: "spell", attack: 0, defense: 0, cost: 4 },
+  "Swift Blade": { name: "Swift Blade", type: "spell", attack: 0, defense: 0, cost: 1 },
+  "Plague Cloud": { name: "Plague Cloud", type: "spell", attack: 0, defense: 0, cost: 3 },
+  "Mirror Shield": { name: "Mirror Shield", type: "spell", attack: 0, defense: 0, cost: 2 },
+  "Soul Drain": { name: "Soul Drain", type: "spell", attack: 0, defense: 0, cost: 4 },
+  "Void Pulse": { name: "Void Pulse", type: "spell", attack: 0, defense: 0, cost: 3 },
+}

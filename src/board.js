@@ -1,5 +1,6 @@
 import { cardLibrary } from './cardLibrary.js'
 import { broadcastCardMoved, broadcastDeckLoaded, broadcastCardDrawn } from './sync.js'
+
 let isRemoteAction = false
 
 export function setRemoteAction(val) {
@@ -25,9 +26,7 @@ export const board = {
   }
 }
 
-
 let localPlayer = 'a'
-// track loaded deck names per player so viewer can show the deck name
 const loadedDeckNames = { a: '', b: '' }
 
 export function setLocalPlayer(p) {
@@ -67,7 +66,7 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   const src = board[`player${fromPlayer.toUpperCase()}`]
   const dst = board[`player${toPlayer.toUpperCase()}`]
 
-  // remove from source first
+  // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
     src[fromZone][parseInt(fromIndex)] = null
   } else {
@@ -78,34 +77,28 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   // place in destination
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
-      // check bank BEFORE placing — only applies when coming from hand
       if (fromZone === 'hand') {
         const canAfford = typeof window.canAffordCard === 'function'
           ? window.canAffordCard(toPlayer, cardName)
           : true
         if (canAfford) {
           dst[toZone][toIndex] = cardName
-          // notify main.js to deduct cost
           if (typeof window.onCardPlayed === 'function') {
             window.onCardPlayed(toPlayer, cardName)
           }
         } else {
-          // cant afford — return card to source hand
           src.hand.push(cardName)
           if (typeof window.onCardBlocked === 'function') {
             window.onCardBlocked(toPlayer, cardName)
           }
         }
       } else {
-        // moving from field to field — no bank check needed
         dst[toZone][toIndex] = cardName
       }
     } else {
-      // slot occupied — return to source hand
       src.hand.push(cardName)
     }
   } else {
-    // gallows, extraDeck, hand, deck — just push
     dst[toZone].push(cardName)
   }
 
@@ -113,9 +106,10 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   if (fromPlayer !== toPlayer) renderAll(toPlayer)
   updateAllCounts(fromPlayer)
   updateAllCounts(toPlayer)
-   if (!isRemoteAction) {
-  broadcastCardMoved({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName })
-}
+
+  if (!isRemoteAction) {
+    broadcastCardMoved({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName })
+  }
 }
 
 function renderAll(player) {
@@ -148,13 +142,12 @@ export function renderField(player) {
           e.dataTransfer.setData('fromPlayer', player)
         })
 
-        // card name always shown
         const nameEl = document.createElement('div')
         nameEl.className = 'field-card-name'
         nameEl.textContent = card.name
         cardEl.appendChild(nameEl)
 
-        // ATK / DEF only shown on monster zones
+        // ATK/DEF only on monster zones
         if (zoneType === 'monster') {
           const statsEl = document.createElement('div')
           statsEl.className = 'field-card-stats'
@@ -172,8 +165,8 @@ export function renderField(player) {
     })
   })
 }
+
 // ── PILE ZONES (gallows, extraDeck) ────────────────────────
-// Shows top card as a preview — click opens full pile viewer
 
 function renderPile(player, zone) {
   const pb = board[`player${player.toUpperCase()}`]
@@ -205,8 +198,7 @@ function renderPile(player, zone) {
   }
 }
 
-// ── PILE VIEWER (gallows + extraDeck) ──────────────────────
-// Full list of all cards in a pile with "To Hand" button on each
+// ── PILE VIEWER ────────────────────────────────────────────
 
 function openPileViewer(player, zone) {
   const pb = board[`player${player.toUpperCase()}`]
@@ -230,13 +222,12 @@ function openPileViewer(player, zone) {
         <span class="card-item-cost">Cost: ${card.cost}</span>
         <button class="zone-btn" style="margin-left:auto">To Hand</button>
       `
-      // To Hand button moves card out of pile into player's hand
       el.querySelector('button').addEventListener('click', () => {
         pb[zone].splice(index, 1)
         pb.hand.push(cardName)
         updateAllCounts(player)
         renderAll(player)
-        openPileViewer(player, zone) // refresh the viewer
+        openPileViewer(player, zone)
       })
       el.querySelector('.card-item-name').addEventListener('click', () => showCardDetail(cardName))
       list.appendChild(el)
@@ -267,7 +258,6 @@ export function renderHand(player) {
     const el = document.createElement('div')
 
     if (player === localPlayer) {
-      // your own cards — visible, clickable, draggable
       el.className = 'hand-card'
       el.textContent = card.name
       el.draggable = true
@@ -280,7 +270,6 @@ export function renderHand(player) {
         e.dataTransfer.setData('fromPlayer', player)
       })
     } else {
-      // opponent's cards — face down, not readable
       el.className = 'hand-card face-down'
     }
 
@@ -301,6 +290,7 @@ export function loadDeckToBoard(player, deckName) {
     broadcastDeckLoaded(player, deckName)
   }
 }
+
 export function drawCard(player) {
   const pb = board[`player${player.toUpperCase()}`]
   if (pb.deck.length === 0) return
@@ -308,15 +298,14 @@ export function drawCard(player) {
   pb.hand.push(card)
   updateAllCounts(player)
   renderHand(player)
-  // tell the other player a card was drawn
-  broadcastCardDrawn(player)
+  // only broadcast if local action — prevents infinite loop
   if (!isRemoteAction) {
     broadcastCardDrawn(player)
   }
 }
+
 export function shuffleDeck(player) {
   const pb = board[`player${player.toUpperCase()}`]
-  // Fisher-Yates shuffle
   for (let i = pb.deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pb.deck[i], pb.deck[j]] = [pb.deck[j], pb.deck[i]]
@@ -326,7 +315,6 @@ export function shuffleDeck(player) {
 
 export function resetField(player) {
   const pb = board[`player${player.toUpperCase()}`]
-  // moves all field cards to gallows
   ;['monster', 'spell'].forEach(zone => {
     pb[zone].forEach((cardName, i) => {
       if (cardName) {
@@ -356,7 +344,6 @@ window.viewDeck = function(player) {
   const pb = board[`player${player.toUpperCase()}`]
   const list = document.getElementById('deck-viewer-list')
   const title = document.getElementById('deck-viewer-title')
-  // show saved deck name if available
   const deckName = loadedDeckNames[player] || `${player.toUpperCase()} Deck`
   title.textContent = `${deckName} — ${pb.deck.length} cards`
   list.innerHTML = ''

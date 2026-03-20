@@ -38,15 +38,43 @@
 
       <!-- ── DECK EDITOR SCREEN ───────────────────────────── -->
       <div class="screen" id="deck-editor">
+
+        <!-- Editor card detail pip — fixed left side, same style as in-game -->
+        <div id="editor-card-detail" class="card-detail hidden">
+          <button class="card-detail-close" onclick="closeEditorCardDetail()">✕</button>
+          <p class="card-detail-type" id="editor-detail-type"></p>
+          <h2 class="card-detail-name" id="editor-detail-name"></h2>
+          <div class="card-detail-stats">
+            <div class="stat-block">
+              <span class="stat-label">ATK</span>
+              <span class="stat-value" id="editor-detail-attack"></span>
+            </div>
+            <div class="stat-block">
+              <span class="stat-label">DEF</span>
+              <span class="stat-value" id="editor-detail-defense"></span>
+            </div>
+            <div class="stat-block">
+              <span class="stat-label">COST</span>
+              <span class="stat-value" id="editor-detail-cost"></span>
+            </div>
+            <div class="stat-block" id="editor-detail-effect-block">
+              <span class="stat-label">EFFECT</span>
+            </div>
+            <p class="card-detail-effect" id="editor-detail-effect"></p>
+          </div>
+        </div>
+
         <div class="editor-container">
           <div class="editor-library">
             <h2 class="editor-title">Card Library</h2>
             <input class="setup-input" type="text" id="card-search" placeholder="Search cards..." />
-            <div id="library-cards"></div>
+            <!-- Scrollable library list -->
+            <div id="library-cards" class="library-scroll"></div>
           </div>
           <div class="editor-deck">
             <h2 class="editor-title">Your Deck</h2>
-            <div id="deck-cards"></div>
+            <!-- Scrollable deck list -->
+            <div id="deck-cards" class="deck-scroll"></div>
             <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." />
             <button class="menu-btn" onclick="saveDeck()">Save Deck</button>
             <div id="saved-decks-list"></div>
@@ -58,7 +86,7 @@
       <!-- ── BOARD SCREEN ──────────────────────────────────── -->
       <div class="screen" id="board">
 
-        <!-- Card detail panel -->
+        <!-- Card detail panel — fixed left, shown on card click in game -->
         <div id="card-detail" class="card-detail hidden">
           <button class="card-detail-close" onclick="closeCardDetail()">✕</button>
           <p class="card-detail-type" id="detail-type"></p>
@@ -75,12 +103,11 @@
             <div class="stat-block">
               <span class="stat-label">COST</span>
               <span class="stat-value" id="detail-cost"></span>
+            </div>
             <div class="stat-block" id="detail-effect-block">
               <span class="stat-label">EFFECT</span>
             </div>
             <p class="card-detail-effect" id="detail-effect"></p>
-
-            </div>
           </div>
         </div>
 
@@ -215,7 +242,6 @@
           <!-- ── NAV PANEL (right strip) ─────────────────── -->
           <div class="nav-panel">
 
-            <!-- B bank (top — rotated so B can read it) -->
             <div class="player-bank-half rotated" id="b-bank-half">
               <span class="bank-label" id="b-bank-label">Player B</span>
               <span class="bank-remaining" id="b-bank-remaining">—</span>
@@ -224,7 +250,6 @@
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
 
-            <!-- Center: orb + controls -->
             <div class="nav-center">
               <div class="bank-orb" id="bank-orb">
                 <span id="bank-value">—</span>
@@ -234,7 +259,6 @@
               <button class="back-btn" onclick="showScreen('home')">⬅ Leave</button>
             </div>
 
-            <!-- A bank (bottom) -->
             <div class="player-bank-half" id="a-bank-half">
               <span class="bank-label" id="a-bank-label">Player A</span>
               <span class="bank-remaining" id="a-bank-remaining">—</span>

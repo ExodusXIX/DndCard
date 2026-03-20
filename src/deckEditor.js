@@ -1,6 +1,7 @@
 import { cardLibrary } from './cardLibrary.js'
 
 let currentDeck = []
+let selectedCard = null
 
 export function initDeckEditor() {
   renderLibrary()
@@ -19,16 +20,22 @@ function renderLibrary(filter = '') {
 
     const el = document.createElement('div')
     el.className = 'card-item'
-    el.draggable = true
     el.dataset.cardName = card.name
     el.innerHTML = `
       <span class="card-item-name">${card.name}</span>
       <span class="card-item-type ${card.type}">${card.type}</span>
       <span class="card-item-cost">Cost: ${card.cost}</span>
+      <button class="zone-btn" style="margin-left:auto">+ Add</button>
     `
-    el.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('cardName', card.name)
-      e.dataTransfer.setData('source', 'library')
+    // click card row to show detail pip
+    el.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return
+      showEditorCardDetail(card.name)
+    })
+    // click Add button to add to deck
+    el.querySelector('button').addEventListener('click', () => {
+      currentDeck.push(card.name)
+      renderDeck()
     })
     container.appendChild(el)
   })
@@ -42,7 +49,6 @@ function renderDeck() {
     const card = cardLibrary[cardName]
     const el = document.createElement('div')
     el.className = 'card-item'
-    el.draggable = true
     el.dataset.cardName = cardName
     el.innerHTML = `
       <span class="card-item-name">${card.name}</span>
@@ -50,8 +56,44 @@ function renderDeck() {
       <span class="card-item-cost">Cost: ${card.cost}</span>
       <button class="remove-card-btn" onclick="removeFromDeck(${index})">✕</button>
     `
+    // click card row to show detail pip
+    el.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return
+      showEditorCardDetail(cardName)
+    })
     container.appendChild(el)
   })
+}
+
+// ── EDITOR CARD DETAIL PIP ─────────────────────────────────
+function showEditorCardDetail(cardName) {
+  const card = cardLibrary[cardName]
+  if (!card) return
+  selectedCard = cardName
+
+  const pip = document.getElementById('editor-card-detail')
+  document.getElementById('editor-detail-name').textContent = card.name
+  document.getElementById('editor-detail-type').textContent = card.type.toUpperCase()
+  document.getElementById('editor-detail-attack').textContent = card.attack
+  document.getElementById('editor-detail-defense').textContent = card.defense
+  document.getElementById('editor-detail-cost').textContent = card.cost
+
+  const effectEl = document.getElementById('editor-detail-effect')
+  const effectBlock = document.getElementById('editor-detail-effect-block')
+  if (card.effect) {
+    effectEl.textContent = card.effect
+    effectEl.style.display = 'block'
+    effectBlock.style.display = 'flex'
+  } else {
+    effectEl.style.display = 'none'
+    effectBlock.style.display = 'none'
+  }
+
+  pip.classList.remove('hidden')
+}
+
+window.closeEditorCardDetail = function() {
+  document.getElementById('editor-card-detail').classList.add('hidden')
 }
 
 function setupSearch() {

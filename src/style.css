@@ -683,3 +683,33 @@ body {
   margin-top: 8px;
   font-style: italic;
 }
+/* ── DECK EDITOR SCROLLABLE LISTS ────────────────────────── */
+.library-scroll {
+  height: 500px;
+  overflow-y: auto;
+  border: 1px solid rgba(200,168,75,0.1);
+  border-radius: 8px;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200,168,75,0.3) transparent;
+}
+
+.deck-scroll {
+  height: 400px;
+  overflow-y: auto;
+  border: 1px dashed rgba(200,168,75,0.2);
+  border-radius: 8px;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200,168,75,0.3) transparent;
+}
+
+/* ── CARD DETAIL EFFECT ──────────────────────────────────── */
+.card-detail-effect {
+  font-family: 'IM Fell English', serif;
+  font-size: 0.7rem;
+  color: rgba(200,168,75,0.7);
+  line-height: 1.5;
+  margin-top: 8px;
+  font-style: italic;
+}

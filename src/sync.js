@@ -29,6 +29,12 @@ export function joinGame(roomId) {
     channel.on('broadcast', { event: 'field_reset' }, () => {
       if (typeof window.onRemoteFieldReset === 'function') window.onRemoteFieldReset()
     })
+    channel.on('broadcast', { event: 'token_create' }, ({ payload }) => {
+      if (typeof window.onRemoteTokenCreate === 'function') window.onRemoteTokenCreate(payload)
+    })
+    channel.on('broadcast', { event: 'token_update' }, ({ payload }) => {
+      if (typeof window.onRemoteTokenUpdate === 'function') window.onRemoteTokenUpdate(payload)
+    })
     channel.on('broadcast', { event: 'player_joined' }, ({ payload }) => {
       if (typeof window.onRemotePlayerJoined === 'function') window.onRemotePlayerJoined(payload)
     })
@@ -51,7 +57,13 @@ export function broadcastRequestNames() {
 export function broadcastCardMoved(payload) {
   channel?.send({ type: 'broadcast', event: 'card_moved', payload })
 }
+export function broadcastTokenCreate(tokenId, tokenData, player) {
+  channel?.send({ type: 'broadcast', event: 'token_create', payload: { tokenId, tokenData, player } })
+}
 
+export function broadcastTokenUpdate(tokenId, tokenData) {
+  channel?.send({ type: 'broadcast', event: 'token_update', payload: { tokenId, tokenData } })
+}
 export function broadcastPlayerJoined(player, name) {
   channel?.send({ type: 'broadcast', event: 'player_joined', payload: { player, name } })
 }

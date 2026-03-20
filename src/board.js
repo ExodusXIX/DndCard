@@ -12,6 +12,34 @@ export function setRemoteAction(val) {
   isRemoteAction = val
 }
 
+// ── TOKEN STORE ────────────────────────────────────────────
+// Tokens are inline objects, not cardLibrary entries
+// Key is a unique token id, value is the token object
+const tokenStore = {}
+let tokenCounter = 0
+
+function createToken() {
+  const id = `__token_${++tokenCounter}`
+  tokenStore[id] = {
+    id,
+    name: 'Token',
+    type: 'monster',
+    attribute: '',
+    attack: 0,
+    defense: 0,
+    cost: 0,
+    effect: 'A blank token.',
+    isToken: true
+  }
+  return id
+}
+
+// get card data — works for both library cards and tokens
+export function getCard(cardName) {
+  if (tokenStore[cardName]) return tokenStore[cardName]
+  return cardLibrary[cardName]
+}
+
 export const board = {
   playerA: {
     monster: [null, null, null],
@@ -21,7 +49,6 @@ export const board = {
     gallows: [],
     extraDeck: [],
     faceState: {},
-    // tracks which hand card is queued to be played face down
     setFaceDown: {}
   },
   playerB: {
@@ -112,6 +139,7 @@ export function initDragAndDrop() {
 function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName) {
   const src = board[`player${fromPlayer.toUpperCase()}`]
   const dst = board[`player${toPlayer.toUpperCase()}`]
+  const card = getCard(cardName)
 
   // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
@@ -127,16 +155,17 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       if (fromZone === 'hand') {
-        const canAfford = typeof window.canAffordCard === 'function'
-          ? window.canAffordCard(toPlayer, cardName)
-          : true
+        // tokens always free — only check bank for real cards
+        const canAfford = card.isToken ? true :
+          typeof window.canAffordCard === 'function'
+            ? window.canAffordCard(toPlayer, cardName)
+            : true
         if (canAfford) {
           dst[toZone][toIndex] = cardName
-          // check if this card was queued to be played face down
           const playFaceDown = src.setFaceDown[cardName] === true
           dst.faceState[`${toZone}-${toIndex}`] = !playFaceDown
           delete src.setFaceDown[cardName]
-          if (typeof window.onCardPlayed === 'function') {
+          if (!card.isToken && typeof window.onCardPlayed === 'function') {
             window.onCardPlayed(toPlayer, cardName)
           }
         } else {
@@ -162,7 +191,10 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   updateAllCounts(toPlayer)
 
   if (!isRemoteAction) {
-    broadcastCardMoved({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName })
+    // for tokens, broadcast the token data too so opponent can reconstruct it
+    const payload = { fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }
+    if (card.isToken) payload.tokenData = { ...tokenStore[cardName] }
+    broadcastCardMoved(payload)
   }
 }
 
@@ -183,14 +215,14 @@ export function renderField(player) {
       if (!el) return
       el.innerHTML = ''
       if (cardName) {
-        const card = cardLibrary[cardName]
+        const card = getCard(cardName)
         const faceKey = `${zoneType}-${i}`
         const isFaceUp = pb.faceState[faceKey] !== false
         const visibleToMe = player === localPlayer
         const showFace = isFaceUp || visibleToMe
 
         const cardEl = document.createElement('div')
-        cardEl.className = `field-card ${card.type}${!isFaceUp ? ' face-down-field' : ''}`
+        cardEl.className = `field-card ${card.type}${!isFaceUp ? ' face-down-field' : ''}${card.isToken ? ' token-card' : ''}`
         cardEl.draggable = true
 
         if (showFace) {
@@ -207,19 +239,19 @@ export function renderField(player) {
             cardEl.appendChild(statsEl)
           }
         } else {
-          // opponent sees blank back
           const nameEl = document.createElement('div')
           nameEl.className = 'field-card-name'
           nameEl.textContent = '▪ Face Down'
           cardEl.appendChild(nameEl)
         }
 
-        // right click on field card — owner only
+        // right click — owner only
         if (player === localPlayer) {
           cardEl.addEventListener('contextmenu', e => {
             e.preventDefault()
             e.stopPropagation()
-            showContextMenu(e.clientX, e.clientY, [
+
+            const menuItems = [
               {
                 label: isFaceUp ? '↓ Set Face Down' : '↑ Flip Face Up',
                 action: () => {
@@ -229,49 +261,117 @@ export function renderField(player) {
                     window.broadcastFlip(player, zoneType, i, !isFaceUp)
                   }
                 }
-              },
-              {
-                label: '⚰ Send to Gallows',
+              }
+            ]
+
+            // token-specific edit options
+            if (card.isToken) {
+              menuItems.push({
+                label: '✏ Edit Name',
                 action: () => {
-                  pb[zoneType][i] = null
-                  delete pb.faceState[faceKey]
-                  pb.gallows.push(cardName)
-                  updateAllCounts(player)
-                  renderAll(player)
-                  if (!isRemoteAction) {
-                    broadcastCardMoved({
-                      fromPlayer: player,
-                      fromZone: zoneType,
-                      fromIndex: String(i),
-                      toPlayer: player,
-                      toZone: 'gallows',
-                      toIndex: null,
-                      cardName
-                    })
+                  const newName = prompt('Token name:', card.name)
+                  if (newName !== null && newName.trim()) {
+                    tokenStore[cardName].name = newName.trim()
+                    renderField(player)
+                    broadcastTokenEdit(cardName)
                   }
                 }
-              },
-              {
-                label: '✋ Return to Hand',
+              })
+              menuItems.push({
+                label: `⚔ Edit ATK (${card.attack})`,
                 action: () => {
-                  pb[zoneType][i] = null
-                  delete pb.faceState[faceKey]
-                  pb.hand.push(cardName)
-                  renderAll(player)
-                  if (!isRemoteAction) {
-                    broadcastCardMoved({
-                      fromPlayer: player,
-                      fromZone: zoneType,
-                      fromIndex: String(i),
-                      toPlayer: player,
-                      toZone: 'hand',
-                      toIndex: null,
-                      cardName
-                    })
+                  const val = prompt('ATK value:', card.attack)
+                  if (val !== null && !isNaN(parseInt(val))) {
+                    tokenStore[cardName].attack = parseInt(val)
+                    renderField(player)
+                    broadcastTokenEdit(cardName)
                   }
+                }
+              })
+              menuItems.push({
+                label: `🛡 Edit DEF (${card.defense})`,
+                action: () => {
+                  const val = prompt('DEF value:', card.defense)
+                  if (val !== null && !isNaN(parseInt(val))) {
+                    tokenStore[cardName].defense = parseInt(val)
+                    renderField(player)
+                    broadcastTokenEdit(cardName)
+                  }
+                }
+              })
+            } else {
+              // stat modifiers for regular cards too
+              menuItems.push({
+                label: `⚔ Modify ATK (${card.attack})`,
+                action: () => {
+                  const val = prompt('New ATK value:', card.attack)
+                  if (val !== null && !isNaN(parseInt(val))) {
+                    // store override in a separate map
+                    if (!pb.statOverrides) pb.statOverrides = {}
+                    if (!pb.statOverrides[faceKey]) pb.statOverrides[faceKey] = {}
+                    pb.statOverrides[faceKey].attack = parseInt(val)
+                    renderField(player)
+                  }
+                }
+              })
+              menuItems.push({
+                label: `🛡 Modify DEF (${card.defense})`,
+                action: () => {
+                  const val = prompt('New DEF value:', card.defense)
+                  if (val !== null && !isNaN(parseInt(val))) {
+                    if (!pb.statOverrides) pb.statOverrides = {}
+                    if (!pb.statOverrides[faceKey]) pb.statOverrides[faceKey] = {}
+                    pb.statOverrides[faceKey].defense = parseInt(val)
+                    renderField(player)
+                  }
+                }
+              })
+            }
+
+            menuItems.push({
+              label: '⚰ Send to Gallows',
+              action: () => {
+                pb[zoneType][i] = null
+                delete pb.faceState[faceKey]
+                pb.gallows.push(cardName)
+                updateAllCounts(player)
+                renderAll(player)
+                if (!isRemoteAction) {
+                  broadcastCardMoved({
+                    fromPlayer: player,
+                    fromZone: zoneType,
+                    fromIndex: String(i),
+                    toPlayer: player,
+                    toZone: 'gallows',
+                    toIndex: null,
+                    cardName
+                  })
                 }
               }
-            ])
+            })
+
+            menuItems.push({
+              label: '✋ Return to Hand',
+              action: () => {
+                pb[zoneType][i] = null
+                delete pb.faceState[faceKey]
+                pb.hand.push(cardName)
+                renderAll(player)
+                if (!isRemoteAction) {
+                  broadcastCardMoved({
+                    fromPlayer: player,
+                    fromZone: zoneType,
+                    fromIndex: String(i),
+                    toPlayer: player,
+                    toZone: 'hand',
+                    toIndex: null,
+                    cardName
+                  })
+                }
+              }
+            })
+
+            showContextMenu(e.clientX, e.clientY, menuItems)
           })
         }
 
@@ -305,7 +405,8 @@ function renderPile(player, zone) {
 
   const cards = pb[zone]
   if (cards.length > 0) {
-    const topCard = cardLibrary[cards[cards.length - 1]]
+    const topCardName = cards[cards.length - 1]
+    const topCard = getCard(topCardName)
     const cardEl = document.createElement('div')
     cardEl.className = `pile-card field-card ${topCard.type}`
     cardEl.textContent = topCard.name
@@ -316,8 +417,7 @@ function renderPile(player, zone) {
     })
     cardEl.addEventListener('dragstart', e => {
       e.stopPropagation()
-      const dragCardName = cards[cards.length - 1]
-      e.dataTransfer.setData('cardName', dragCardName)
+      e.dataTransfer.setData('cardName', topCardName)
       e.dataTransfer.setData('fromZone', zone)
       e.dataTransfer.setData('fromIndex', '-1')
       e.dataTransfer.setData('fromPlayer', player)
@@ -341,7 +441,7 @@ function openPileViewer(player, zone) {
     list.innerHTML = '<p class="setup-label">Empty.</p>'
   } else {
     cards.forEach((cardName, index) => {
-      const card = cardLibrary[cardName]
+      const card = getCard(cardName)
       const el = document.createElement('div')
       el.className = 'card-item'
       el.innerHTML = `
@@ -383,13 +483,12 @@ export function renderHand(player) {
   container.innerHTML = ''
 
   pb.hand.forEach((cardName) => {
-    const card = cardLibrary[cardName]
+    const card = getCard(cardName)
     const el = document.createElement('div')
 
     if (player === localPlayer) {
-      // show visual indicator if card is queued face down
       const isSetFaceDown = pb.setFaceDown[cardName] === true
-      el.className = `hand-card${isSetFaceDown ? ' hand-card-set' : ''}`
+      el.className = `hand-card${isSetFaceDown ? ' hand-card-set' : ''}${card.isToken ? ' hand-card-token' : ''}`
       el.textContent = isSetFaceDown ? `↓ ${card.name}` : card.name
       el.draggable = true
       el.addEventListener('click', () => showCardDetail(cardName))
@@ -400,10 +499,8 @@ export function renderHand(player) {
         e.dataTransfer.setData('fromIndex', '-1')
         e.dataTransfer.setData('fromPlayer', player)
       })
-      // right click context menu
       el.addEventListener('contextmenu', e => {
         e.preventDefault()
-        const isSet = pb.setFaceDown[cardName] === true
         showContextMenu(e.clientX, e.clientY, [
           {
             label: '⚔ Summon Face Up',
@@ -451,6 +548,30 @@ export function renderHand(player) {
 
     container.appendChild(el)
   })
+}
+
+// ── TOKEN ──────────────────────────────────────────────────
+
+export function addTokenToHand(player) {
+  const pb = board[`player${player.toUpperCase()}`]
+  const tokenId = createToken()
+  pb.hand.push(tokenId)
+  renderHand(player)
+  // broadcast token creation so opponent knows the token exists
+  if (!isRemoteAction && typeof window.broadcastTokenCreate === 'function') {
+    window.broadcastTokenCreate(tokenId, { ...tokenStore[tokenId] }, player)
+  }
+}
+
+function broadcastTokenEdit(tokenId) {
+  if (!isRemoteAction && typeof window.broadcastTokenUpdate === 'function') {
+    window.broadcastTokenUpdate(tokenId, { ...tokenStore[tokenId] })
+  }
+}
+
+// apply a token from remote — register it in tokenStore
+export function registerToken(tokenId, tokenData) {
+  tokenStore[tokenId] = { ...tokenData, id: tokenId, isToken: true }
 }
 
 // ── DECK ──────────────────────────────────────────────────
@@ -528,7 +649,7 @@ window.viewDeck = function(player) {
     list.innerHTML = '<p class="setup-label">No cards in deck.</p>'
   } else {
     pb.deck.forEach(cardName => {
-      const card = cardLibrary[cardName]
+      const card = getCard(cardName)
       const el = document.createElement('div')
       el.className = 'card-item'
       el.innerHTML = `
@@ -578,7 +699,7 @@ export function showDeckPicker(player) {
 // ── CARD DETAIL ────────────────────────────────────────────
 
 export function showCardDetail(cardName) {
-  const card = cardLibrary[cardName]
+  const card = getCard(cardName)
   if (!card) return
   document.getElementById('detail-name').textContent = card.name
   document.getElementById('detail-type').textContent = card.type.toUpperCase()

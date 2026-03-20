@@ -847,3 +847,14 @@ body {
   width: auto;
   padding: 3px 12px;
 }
+/* Token cards — distinct gold border */
+.token-card {
+  border-color: rgba(200,168,75,0.6) !important;
+  background: rgba(200,168,75,0.08) !important;
+}
+
+.hand-card-token {
+  border-color: rgba(200,168,75,0.5);
+  background: rgba(200,168,75,0.06);
+  font-style: italic;
+}

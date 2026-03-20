@@ -675,3 +675,11 @@ body {
 #board.perspective-b #a-bank-half {
   transform: rotate(180deg);
 }
+.card-detail-effect {
+  font-family: 'IM Fell English', serif;
+  font-size: 0.7rem;
+  color: rgba(200,168,75,0.7);
+  line-height: 1.5;
+  margin-top: 8px;
+  font-style: italic;
+}

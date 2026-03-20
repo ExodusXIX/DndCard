@@ -400,7 +400,6 @@ export function showDeckPicker(player) {
 }
 
 // ── CARD DETAIL ────────────────────────────────────────────
-
 export function showCardDetail(cardName) {
   const card = cardLibrary[cardName]
   if (!card) return
@@ -409,6 +408,18 @@ export function showCardDetail(cardName) {
   document.getElementById('detail-attack').textContent = card.attack
   document.getElementById('detail-defense').textContent = card.defense
   document.getElementById('detail-cost').textContent = card.cost
+
+  const effectEl = document.getElementById('detail-effect')
+  const effectBlock = document.getElementById('detail-effect-block')
+  if (card.effect) {
+    effectEl.textContent = card.effect
+    effectEl.style.display = 'block'
+    effectBlock.style.display = 'flex'
+  } else {
+    effectEl.style.display = 'none'
+    effectBlock.style.display = 'none'
+  }
+
   document.getElementById('card-detail').classList.remove('hidden')
 }
 

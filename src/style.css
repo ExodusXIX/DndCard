@@ -790,3 +790,49 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(200,168,75,0.3) transparent;
 }
+/* ── CARD ATTRIBUTE ──────────────────────────────────────── */
+.card-detail-attribute {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.attr-land {
+  background: rgba(120,80,40,0.2);
+  color: #c8a060;
+  border: 1px solid rgba(120,80,40,0.4);
+}
+
+.attr-air {
+  background: rgba(180,220,255,0.1);
+  color: #a0c8e0;
+  border: 1px solid rgba(180,220,255,0.3);
+}
+
+.attr-sea {
+  background: rgba(40,80,180,0.2);
+  color: #6090e0;
+  border: 1px solid rgba(40,80,180,0.4);
+}
+
+.attr-cosmic {
+  background: rgba(100,40,180,0.2);
+  color: #a070e0;
+  border: 1px solid rgba(100,40,180,0.4);
+}
+
+.attr-divine {
+  background: rgba(220,180,40,0.15);
+  color: #e8d060;
+  border: 1px solid rgba(220,180,40,0.35);
+}
+.token-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 4px 4px 4px;
+}

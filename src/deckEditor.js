@@ -27,12 +27,10 @@ function renderLibrary(filter = '') {
       <span class="card-item-cost">Cost: ${card.cost}</span>
       <button class="zone-btn" style="margin-left:auto">+ Add</button>
     `
-    // click card row to show detail pip
     el.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return
       showEditorCardDetail(card.name)
     })
-    // click Add button to add to deck
     el.querySelector('button').addEventListener('click', () => {
       currentDeck.push(card.name)
       renderDeck()
@@ -56,7 +54,6 @@ function renderDeck() {
       <span class="card-item-cost">Cost: ${card.cost}</span>
       <button class="remove-card-btn" onclick="removeFromDeck(${index})">✕</button>
     `
-    // click card row to show detail pip
     el.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return
       showEditorCardDetail(cardName)
@@ -66,17 +63,29 @@ function renderDeck() {
 }
 
 // ── EDITOR CARD DETAIL PIP ─────────────────────────────────
+
 function showEditorCardDetail(cardName) {
   const card = cardLibrary[cardName]
   if (!card) return
   selectedCard = cardName
 
-  const pip = document.getElementById('editor-card-detail')
   document.getElementById('editor-detail-name').textContent = card.name
   document.getElementById('editor-detail-type').textContent = card.type.toUpperCase()
   document.getElementById('editor-detail-attack').textContent = card.attack
   document.getElementById('editor-detail-defense').textContent = card.defense
   document.getElementById('editor-detail-cost').textContent = card.cost
+
+  // attribute
+  const attrEl = document.getElementById('editor-detail-attribute')
+  if (attrEl) {
+    if (card.attribute) {
+      attrEl.textContent = card.attribute.toUpperCase()
+      attrEl.className = `card-detail-attribute attr-${card.attribute.toLowerCase()}`
+      attrEl.style.display = 'inline-block'
+    } else {
+      attrEl.style.display = 'none'
+    }
+  }
 
   const effectEl = document.getElementById('editor-detail-effect')
   const effectBlock = document.getElementById('editor-detail-effect-block')
@@ -89,7 +98,7 @@ function showEditorCardDetail(cardName) {
     effectBlock.style.display = 'none'
   }
 
-  pip.classList.remove('hidden')
+  document.getElementById('editor-card-detail').classList.remove('hidden')
 }
 
 window.closeEditorCardDetail = function() {

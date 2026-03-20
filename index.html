@@ -39,11 +39,12 @@
       <!-- ── DECK EDITOR SCREEN ───────────────────────────── -->
       <div class="screen" id="deck-editor">
 
-        <!-- Editor card detail pip — fixed left side, same style as in-game -->
+        <!-- Editor card detail pip -->
         <div id="editor-card-detail" class="card-detail hidden">
           <button class="card-detail-close" onclick="closeEditorCardDetail()">✕</button>
           <p class="card-detail-type" id="editor-detail-type"></p>
           <h2 class="card-detail-name" id="editor-detail-name"></h2>
+          <p class="card-detail-attribute" id="editor-detail-attribute"></p>
           <div class="card-detail-stats">
             <div class="stat-block">
               <span class="stat-label">ATK</span>
@@ -68,12 +69,10 @@
           <div class="editor-library">
             <h2 class="editor-title">Card Library</h2>
             <input class="setup-input" type="text" id="card-search" placeholder="Search cards..." />
-            <!-- Scrollable library list -->
             <div id="library-cards" class="library-scroll"></div>
           </div>
           <div class="editor-deck">
             <h2 class="editor-title">Your Deck</h2>
-            <!-- Scrollable deck list -->
             <div id="deck-cards" class="deck-scroll"></div>
             <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." />
             <button class="menu-btn" onclick="saveDeck()">Save Deck</button>
@@ -86,11 +85,12 @@
       <!-- ── BOARD SCREEN ──────────────────────────────────── -->
       <div class="screen" id="board">
 
-        <!-- Card detail panel — fixed left, shown on card click in game -->
+        <!-- Card detail panel -->
         <div id="card-detail" class="card-detail hidden">
           <button class="card-detail-close" onclick="closeCardDetail()">✕</button>
           <p class="card-detail-type" id="detail-type"></p>
           <h2 class="card-detail-name" id="detail-name"></h2>
+          <p class="card-detail-attribute" id="detail-attribute"></p>
           <div class="card-detail-stats">
             <div class="stat-block">
               <span class="stat-label">ATK</span>
@@ -138,14 +138,17 @@
           </div>
         </div>
 
-        <!-- ── BOARD AREA (left) + NAV PANEL (right) ──────── -->
+        <!-- ── BOARD AREA + NAV PANEL ──────────────────────── -->
         <div class="board-layout">
 
-          <!-- ── BOARDS COLUMN ───────────────────────────── -->
           <div class="boards-column">
 
             <!-- Player B board -->
             <div class="player-board" id="playerB">
+              <!-- Token button above B's name — after rotation this sits at top for B -->
+              <div class="token-bar">
+                <button class="zone-btn" onclick="addToken('b')">+ Token</button>
+              </div>
               <div class="player-name-tag" id="b-name">Player B</div>
               <div class="board-zones">
                 <div class="side-zones">
@@ -189,11 +192,14 @@
               <div class="hand-zone droptarget" id="b-hand" data-zone="hand" data-player="b"></div>
             </div>
 
-            <!-- Divider line between boards -->
             <div class="board-divider"></div>
 
             <!-- Player A board -->
             <div class="player-board" id="playerA">
+              <!-- Token button above A's name -->
+              <div class="token-bar">
+                <button class="zone-btn" onclick="addToken('a')">+ Token</button>
+              </div>
               <div class="player-name-tag" id="a-name">Player A</div>
               <div class="board-zones">
                 <div class="side-zones">
@@ -239,9 +245,8 @@
 
           </div>
 
-          <!-- ── NAV PANEL (right strip) ─────────────────── -->
+          <!-- ── NAV PANEL ───────────────────────────────── -->
           <div class="nav-panel">
-
             <div class="player-bank-half rotated" id="b-bank-half">
               <span class="bank-label" id="b-bank-label">Player B</span>
               <span class="bank-remaining" id="b-bank-remaining">—</span>
@@ -249,7 +254,6 @@
               <button class="zone-btn" onclick="chooseDeck('b')">Deck</button>
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
-
             <div class="nav-center">
               <div class="bank-orb" id="bank-orb">
                 <span id="bank-value">—</span>
@@ -258,7 +262,6 @@
               <button class="zone-btn" onclick="triggerResetField()">Reset Field</button>
               <button class="back-btn" onclick="showScreen('home')">⬅ Leave</button>
             </div>
-
             <div class="player-bank-half" id="a-bank-half">
               <span class="bank-label" id="a-bank-label">Player A</span>
               <span class="bank-remaining" id="a-bank-remaining">—</span>
@@ -266,7 +269,6 @@
               <button class="zone-btn" onclick="chooseDeck('a')">Deck</button>
               <button class="zone-btn" onclick="triggerShuffle('a')">Shuffle</button>
             </div>
-
           </div>
 
         </div>

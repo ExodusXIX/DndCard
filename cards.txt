@@ -1,0 +1,159 @@
+Corpse Wrangler
+type: monster
+attribute: Land
+attack: 300
+defense: 300
+cost: 1
+effect: When this card is played, designate a target in the gallows and merge it with this card. (This is treated as a resurrection) The resurrected targets stat total is halved until the end of your opponent’s turn.
+
+Old Man Mike
+type: monster
+attribute: Land
+attack: 1000
+defense: 800
+cost: 1
+effect: Lose a heart, destroy a card on the field (if possible). 
+
+Martin Gax (Spirit)
+type: monster
+attribute: Land
+attack: 100
+defense: 0
+cost: 1
+effect: At the start of your turn: You can reveal this card in your hand, and it will remain revealed until the end of this turn; gain 1 heart. 
+
+Atomic Avian (Babel)
+type: monster
+attribute: Air
+attack: 4000
+defense: 800
+cost: 3
+effect: Once per turn: You can target 1 card you control and 1 card your opponent controls; destroy them. When this card in your possession is destroyed by your opponent's cards and sent to your gallows: Destroy 1 card on both sides of the field.
+
+Shard
+type: monster
+attribute: Land 
+attack: 2000
+defense: 2000
+cost: 3
+effect: Next turn, Gain +1 Catalyst for every card that was destroyed or discarded in this game (excluding clash) regardless if this card is still in play or not. 
+
+The Quilled Monster
+type: monster
+attribute: Land
+attack: 0
+defense: 0
+cost: 1
+effect: If this card is Sacrificed or Destroyed, you may destroy a card on either side of the field.
+
+G.I.G
+type: monster
+attribute: Land
+attack: 1250
+defense: 1250
+cost: 1
+effect: When this card is played, SET the ATK of all cards in your deck to 1250.
+
+Kangus The Steadfast
+type: monster
+attribute: Land
+attack: 1500
+defense: 1500
+cost: 4
+effect: Reduce the cost of this card in your hand by 1 for every card destroyed this game. If this card's cost drops to <2, you maay conjure this card for free. 
+
+Swarm
+type: monster
+attribute: Air 
+attack: 1250
+defense: 1000
+cost: 0/1
+effect: When you discard this card, Add 2 copies of it that cost 0 into your hand. 
+
+Tile Mimic
+type: monster
+attribute: Land
+attack: 1000
+defense: 1000
+cost: 1
+effect: When this card is played, Draw 1 card.
+
+Bloodhound
+type: monster
+attribute: Land
+attack: 1200
+defense: 1400
+cost: 1
+effect:  When this card is played, you may give a monster on the field +500ATK, then double it’s ATK.
+
+Metias The Scholar
+type: monster
+attribute: Land
+attack: 500
+defense: 500 
+cost: 2
+effect: Each player shuffles all cards from their hand, field, and gallows into the Deck, then draws 3 cards.
+
+The Grand Archives
+type: spell
+attribute: "" 
+attack: -
+defense: -
+cost: 2
+effect: Cast an Action Card that costs 2 or less from your deck.
+
+GreaterTimeStreamSegmentum
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 2
+effect: When a monster is destroyed in battle and sent to the gallows: resurrect that monster to the same zone it was on, in the same stance it was in when destroyed.
+
+Duke's Wares
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 1
+effect: You and your opponent draw 2 cards. 
+
+Catalyst Stone
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 2
+effect: You can send this card to the gallows; Gain +1 Catalyst for each turn that has passed since this card was activated. 
+
+In the Zone!
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 2
+effect: As long as this card is up-right on the field, cards you play cannot be negated.
+
+Captain's Orders
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 1
+effect: Add 1 “Wonderland” creature from your deck to your hand. You can only use 1 “Captain’s Orders!” per turn.
+
+Cloning Vat
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 2
+effect: Target 1 monster on the field, add an exact replica of that card to an adjacent column.
+
+GateKeeper's Remedy
+type: spell
+attribute: ""
+attack: -
+defense: -
+cost: 1
+effect: Unspent Catalyst carries over to subsequent turns.

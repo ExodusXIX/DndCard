@@ -1,9 +1,11 @@
 import { cardLibrary } from './cardLibrary.js'
 import { broadcastCardMoved, broadcastDeckLoaded, broadcastCardDrawn } from './sync.js'
+
 window.closeDeckPicker = function() {
   const el = document.getElementById('deck-picker')
   if (el) el.classList.add('hidden')
 }
+
 let isRemoteAction = false
 
 export function setRemoteAction(val) {
@@ -17,7 +19,8 @@ export const board = {
     deck: [],
     hand: [],
     gallows: [],
-    extraDeck: []
+    extraDeck: [],
+    faceState: {}
   },
   playerB: {
     monster: [null, null, null],
@@ -25,7 +28,8 @@ export const board = {
     deck: [],
     hand: [],
     gallows: [],
-    extraDeck: []
+    extraDeck: [],
+    faceState: {}
   }
 }
 
@@ -36,9 +40,46 @@ export function setLocalPlayer(p) {
   localPlayer = p
 }
 
+// ── CONTEXT MENU ──────────────────────────────────────────
+
+let contextMenu = null
+
+function createContextMenu() {
+  if (document.getElementById('card-context-menu')) return
+  const menu = document.createElement('div')
+  menu.id = 'card-context-menu'
+  menu.className = 'context-menu hidden'
+  document.body.appendChild(menu)
+  contextMenu = menu
+  document.addEventListener('click', () => {
+    if (contextMenu) contextMenu.classList.add('hidden')
+  })
+}
+
+function showContextMenu(x, y, items) {
+  if (!contextMenu) createContextMenu()
+  contextMenu.innerHTML = ''
+  items.forEach(({ label, action }) => {
+    const btn = document.createElement('button')
+    btn.className = 'context-menu-item'
+    btn.textContent = label
+    btn.addEventListener('click', e => {
+      e.stopPropagation()
+      action()
+      contextMenu.classList.add('hidden')
+    })
+    contextMenu.appendChild(btn)
+  })
+  contextMenu.style.left = `${x}px`
+  contextMenu.style.top = `${y}px`
+  contextMenu.classList.remove('hidden')
+}
+
 // ── DRAG AND DROP ──────────────────────────────────────────
 
 export function initDragAndDrop() {
+  createContextMenu()
+
   document.querySelectorAll('.droptarget').forEach(zone => {
     zone.addEventListener('dragover', e => {
       e.preventDefault()
@@ -71,6 +112,8 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
 
   // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
+    const key = `${fromZone}-${fromIndex}`
+    delete src.faceState[key]
     src[fromZone][parseInt(fromIndex)] = null
   } else {
     const i = src[fromZone].indexOf(cardName)
@@ -86,6 +129,7 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
           : true
         if (canAfford) {
           dst[toZone][toIndex] = cardName
+          dst.faceState[`${toZone}-${toIndex}`] = true
           if (typeof window.onCardPlayed === 'function') {
             window.onCardPlayed(toPlayer, cardName)
           }
@@ -97,6 +141,7 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
         }
       } else {
         dst[toZone][toIndex] = cardName
+        dst.faceState[`${toZone}-${toIndex}`] = src.faceState[`${fromZone}-${fromIndex}`] ?? true
       }
     } else {
       src.hand.push(cardName)
@@ -133,10 +178,52 @@ export function renderField(player) {
       el.innerHTML = ''
       if (cardName) {
         const card = cardLibrary[cardName]
+        const faceKey = `${zoneType}-${i}`
+        const isFaceUp = pb.faceState[faceKey] !== false
+        const visibleToMe = player === localPlayer
+        const showFace = isFaceUp || visibleToMe
+
         const cardEl = document.createElement('div')
-        cardEl.className = `field-card ${card.type}`
+        cardEl.className = `field-card ${card.type}${!isFaceUp ? ' face-down-field' : ''}`
         cardEl.draggable = true
-        cardEl.addEventListener('click', () => showCardDetail(cardName))
+
+        if (showFace) {
+          cardEl.addEventListener('click', () => showCardDetail(cardName))
+          const nameEl = document.createElement('div')
+          nameEl.className = 'field-card-name'
+          nameEl.textContent = isFaceUp ? card.name : `↓ ${card.name}`
+          cardEl.appendChild(nameEl)
+
+          if (zoneType === 'monster') {
+            const statsEl = document.createElement('div')
+            statsEl.className = 'field-card-stats'
+            statsEl.textContent = `${card.attack} / ${card.defense}`
+            cardEl.appendChild(statsEl)
+          }
+        } else {
+          const nameEl = document.createElement('div')
+          nameEl.className = 'field-card-name'
+          nameEl.textContent = '▪ Face Down'
+          cardEl.appendChild(nameEl)
+        }
+
+        // flip button — owner only
+        if (player === localPlayer) {
+          const flipBtn = document.createElement('button')
+          flipBtn.className = 'flip-btn'
+          flipBtn.textContent = isFaceUp ? '↓' : '↑'
+          flipBtn.title = isFaceUp ? 'Set Face Down' : 'Flip Face Up'
+          flipBtn.addEventListener('click', e => {
+            e.stopPropagation()
+            pb.faceState[faceKey] = !isFaceUp
+            renderField(player)
+            if (!isRemoteAction && typeof window.broadcastFlip === 'function') {
+              window.broadcastFlip(player, zoneType, i, !isFaceUp)
+            }
+          })
+          cardEl.appendChild(flipBtn)
+        }
+
         cardEl.addEventListener('dragstart', e => {
           e.stopPropagation()
           e.dataTransfer.setData('cardName', cardName)
@@ -144,19 +231,6 @@ export function renderField(player) {
           e.dataTransfer.setData('fromIndex', String(i))
           e.dataTransfer.setData('fromPlayer', player)
         })
-
-        const nameEl = document.createElement('div')
-        nameEl.className = 'field-card-name'
-        nameEl.textContent = card.name
-        cardEl.appendChild(nameEl)
-
-        // ATK/DEF only on monster zones
-        if (zoneType === 'monster') {
-          const statsEl = document.createElement('div')
-          statsEl.className = 'field-card-stats'
-          statsEl.textContent = `${card.attack} / ${card.defense}`
-          cardEl.appendChild(statsEl)
-        }
 
         el.appendChild(cardEl)
       } else {
@@ -169,7 +243,7 @@ export function renderField(player) {
   })
 }
 
-// ── PILE ZONES (gallows, extraDeck) ────────────────────────
+// ── PILE ZONES ─────────────────────────────────────────────
 
 function renderPile(player, zone) {
   const pb = board[`player${player.toUpperCase()}`]
@@ -225,7 +299,8 @@ function openPileViewer(player, zone) {
         <span class="card-item-cost">Cost: ${card.cost}</span>
         <button class="zone-btn" style="margin-left:auto">To Hand</button>
       `
-      el.querySelector('button').addEventListener('click', () => {
+      el.querySelector('button').addEventListener('click', e => {
+        e.stopPropagation()
         pb[zone].splice(index, 1)
         pb.hand.push(cardName)
         updateAllCounts(player)
@@ -272,6 +347,35 @@ export function renderHand(player) {
         e.dataTransfer.setData('fromIndex', '-1')
         e.dataTransfer.setData('fromPlayer', player)
       })
+      // right click → send to gallows
+      el.addEventListener('contextmenu', e => {
+        e.preventDefault()
+        showContextMenu(e.clientX, e.clientY, [
+          {
+            label: '⚰ Send to Gallows',
+            action: () => {
+              const idx = pb.hand.indexOf(cardName)
+              if (idx !== -1) {
+                pb.hand.splice(idx, 1)
+                pb.gallows.push(cardName)
+                updateAllCounts(player)
+                renderAll(player)
+                if (!isRemoteAction) {
+                  broadcastCardMoved({
+                    fromPlayer: player,
+                    fromZone: 'hand',
+                    fromIndex: '-1',
+                    toPlayer: player,
+                    toZone: 'gallows',
+                    toIndex: null,
+                    cardName
+                  })
+                }
+              }
+            }
+          }
+        ])
+      })
     } else {
       el.className = 'hand-card face-down'
     }
@@ -288,7 +392,7 @@ export function loadDeckToBoard(player, deckName) {
   board[`player${player.toUpperCase()}`].deck = [...allDecks[deckName]]
   loadedDeckNames[player] = deckName
   updateAllCounts(player)
-  closeDeckPicker()
+  window.closeDeckPicker()
   if (!isRemoteAction) {
     broadcastDeckLoaded(player, deckName)
   }
@@ -301,7 +405,6 @@ export function drawCard(player) {
   pb.hand.push(card)
   updateAllCounts(player)
   renderHand(player)
-  // only broadcast if local action — prevents infinite loop
   if (!isRemoteAction) {
     broadcastCardDrawn(player)
   }
@@ -323,6 +426,7 @@ export function resetField(player) {
       if (cardName) {
         pb.gallows.push(cardName)
         pb[zone][i] = null
+        delete pb.faceState[`${zone}-${i}`]
       }
     })
   })
@@ -403,6 +507,7 @@ export function showDeckPicker(player) {
 }
 
 // ── CARD DETAIL ────────────────────────────────────────────
+
 export function showCardDetail(cardName) {
   const card = cardLibrary[cardName]
   if (!card) return
@@ -411,6 +516,18 @@ export function showCardDetail(cardName) {
   document.getElementById('detail-attack').textContent = card.attack
   document.getElementById('detail-defense').textContent = card.defense
   document.getElementById('detail-cost').textContent = card.cost
+
+  // attribute — monsters only
+  const attrEl = document.getElementById('detail-attribute')
+  if (attrEl) {
+    if (card.attribute) {
+      attrEl.textContent = card.attribute.toUpperCase()
+      attrEl.className = `card-detail-attribute attr-${card.attribute.toLowerCase()}`
+      attrEl.style.display = 'inline-block'
+    } else {
+      attrEl.style.display = 'none'
+    }
+  }
 
   const effectEl = document.getElementById('detail-effect')
   const effectBlock = document.getElementById('detail-effect-block')
@@ -431,7 +548,8 @@ window.closeCardDetail = function() {
 }
 
 window.closeDeckPicker = function() {
-  document.getElementById('deck-picker').classList.add('hidden')
+  const el = document.getElementById('deck-picker')
+  if (el) el.classList.add('hidden')
 }
 
 window.onDeckClick = function(player) {

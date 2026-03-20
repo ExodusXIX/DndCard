@@ -178,6 +178,13 @@ window.onRemoteFieldReset = function() {
   resetField('b')
   setRemoteAction(false)
 }
+window.addToken = function(player) {
+  import('./board.js').then(m => {
+    const pb = m.board[`player${player.toUpperCase()}`]
+    pb.hand.push('Token')
+    m.renderHand(player)
+  })
+}
 window.onRemoteCardFlipped = function({ player, zoneType, index, faceUp }) {
   const pb = board[`player${player.toUpperCase()}`]
   pb.faceState[`${zoneType}-${index}`] = faceUp

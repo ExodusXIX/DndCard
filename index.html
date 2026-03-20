@@ -5,17 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Card Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
-    <script type="module" crossorigin src="/DndCard/assets/index-BN-X5ePY.js"></script>
-    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-D16TkPY4.css">
+    <script type="module" crossorigin src="/DndCard/assets/index-6bsGWfvC.js"></script>
+    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-Cr9JewAj.css">
   </head>
   <body>
     <div id="app">
 
       <!-- ── HOME SCREEN ──────────────────────────────────── -->
       <div class="screen active" id="home">
-        <div class="home-container">
-          <button class="menu-btn" onclick="showScreen('setup')">Play</button>
-          <button class="menu-btn" onclick="showScreen('deck-editor')">Deck Builder</button>
+        <div class="home-layout">
+          <div class="home-container">
+            <button class="menu-btn" onclick="showScreen('setup')">Play</button>
+            <button class="menu-btn" onclick="showScreen('deck-editor')">Deck Builder</button>
+          </div>
+          <div class="patch-notes">
+            <h3 class="patch-notes-title">Patch Notes</h3>
+            <div class="patch-notes-list" id="patch-notes-list">
+              <p class="patch-notes-loading">Loading...</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -147,7 +155,6 @@
 
             <!-- Player B board -->
             <div class="player-board" id="playerB">
-              <!-- Token button above B's name — after rotation this sits at top for B -->
               <div class="token-bar">
                 <button class="zone-btn" onclick="addToken('b')">+ Token</button>
               </div>
@@ -198,7 +205,6 @@
 
             <!-- Player A board -->
             <div class="player-board" id="playerA">
-              <!-- Token button above A's name -->
               <div class="token-bar">
                 <button class="zone-btn" onclick="addToken('a')">+ Token</button>
               </div>

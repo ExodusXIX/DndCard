@@ -12,9 +12,6 @@ export function setRemoteAction(val) {
   isRemoteAction = val
 }
 
-// ── TOKEN STORE ────────────────────────────────────────────
-// Tokens are inline objects, not cardLibrary entries
-// Key is a unique token id, value is the token object
 const tokenStore = {}
 let tokenCounter = 0
 
@@ -34,7 +31,6 @@ function createToken() {
   return id
 }
 
-// get card data — works for both library cards and tokens
 export function getCard(cardName) {
   if (tokenStore[cardName]) return tokenStore[cardName]
   return cardLibrary[cardName]
@@ -141,6 +137,9 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   const dst = board[`player${toPlayer.toUpperCase()}`]
   const card = getCard(cardName)
 
+  // save face state BEFORE removing from source so we can carry it over
+  const savedFaceState = src.faceState[`${fromZone}-${fromIndex}`] ?? true
+
   // remove from source
   if (fromZone === 'monster' || fromZone === 'spell') {
     const key = `${fromZone}-${fromIndex}`
@@ -155,7 +154,6 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       if (fromZone === 'hand') {
-        // tokens always free — only check bank for real cards
         const canAfford = card.isToken ? true :
           typeof window.canAffordCard === 'function'
             ? window.canAffordCard(toPlayer, cardName)
@@ -175,8 +173,9 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
           }
         }
       } else {
+        // moving from field to field — carry over the saved face state
         dst[toZone][toIndex] = cardName
-        dst.faceState[`${toZone}-${toIndex}`] = src.faceState[`${fromZone}-${fromIndex}`] ?? true
+        dst.faceState[`${toZone}-${toIndex}`] = savedFaceState
       }
     } else {
       src.hand.push(cardName)
@@ -191,7 +190,6 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   updateAllCounts(toPlayer)
 
   if (!isRemoteAction) {
-    // for tokens, broadcast the token data too so opponent can reconstruct it
     const payload = { fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }
     if (card.isToken) payload.tokenData = { ...tokenStore[cardName] }
     broadcastCardMoved(payload)
@@ -245,7 +243,6 @@ export function renderField(player) {
           cardEl.appendChild(nameEl)
         }
 
-        // right click — owner only
         if (player === localPlayer) {
           cardEl.addEventListener('contextmenu', e => {
             e.preventDefault()
@@ -264,7 +261,6 @@ export function renderField(player) {
               }
             ]
 
-            // token-specific edit options
             if (card.isToken) {
               menuItems.push({
                 label: '✏ Edit Name',
@@ -300,13 +296,11 @@ export function renderField(player) {
                 }
               })
             } else {
-              // stat modifiers for regular cards too
               menuItems.push({
                 label: `⚔ Modify ATK (${card.attack})`,
                 action: () => {
                   const val = prompt('New ATK value:', card.attack)
                   if (val !== null && !isNaN(parseInt(val))) {
-                    // store override in a separate map
                     if (!pb.statOverrides) pb.statOverrides = {}
                     if (!pb.statOverrides[faceKey]) pb.statOverrides[faceKey] = {}
                     pb.statOverrides[faceKey].attack = parseInt(val)
@@ -326,6 +320,19 @@ export function renderField(player) {
                   }
                 }
               })
+              menuItems.push({
+                label: '📝 Edit Effect',
+                action: () => {
+                  const val = prompt('Effect Text:',card.effect)
+                  if (val !== null) {
+                    tokenStore[cardName].effect = val.trim()
+                    renderField(player)
+                    broadcastTokenEdit(cardName)
+
+                  }
+                }
+              }
+              )
             }
 
             menuItems.push({
@@ -557,7 +564,6 @@ export function addTokenToHand(player) {
   const tokenId = createToken()
   pb.hand.push(tokenId)
   renderHand(player)
-  // broadcast token creation so opponent knows the token exists
   if (!isRemoteAction && typeof window.broadcastTokenCreate === 'function') {
     window.broadcastTokenCreate(tokenId, { ...tokenStore[tokenId] }, player)
   }
@@ -569,7 +575,6 @@ function broadcastTokenEdit(tokenId) {
   }
 }
 
-// apply a token from remote — register it in tokenStore
 export function registerToken(tokenId, tokenData) {
   tokenStore[tokenId] = { ...tokenData, id: tokenId, isToken: true }
 }
@@ -686,7 +691,7 @@ export function showDeckPicker(player) {
     names.forEach(name => {
       const btn = document.createElement('button')
       btn.className = 'menu-btn'
-      btn.style.marginBottom = '8px'
+      btn.style.marginBottom = '8x'
       btn.textContent = name
       btn.onclick = () => loadDeckToBoard(player, name)
       list.appendChild(btn)

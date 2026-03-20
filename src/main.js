@@ -2,16 +2,27 @@ import './style.css'
 import { initDeckEditor, setupDeckDropzone } from './deckEditor.js'
 import { playerA, playerB, rollBank, spendFromBank, getRemainingBank, cardLibrary, gameState } from './game.js'
 import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, board, setRemoteAction, addTokenToHand, registerToken } from './board.js'
-import { joinGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames, broadcastFlip } from './sync.js'
+import { joinGame, leaveGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames, broadcastFlip } from './sync.js'
 
 let localPlayer = 'a'
+let dragDropInitialized = false
+
 window.broadcastFlip = broadcastFlip
 
 window.showScreen = function(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
   document.getElementById(screenId).classList.add('active')
-  if (screenId === 'board') {
+
+  // only initialize drag and drop once — prevents duplicate event listener buildup
+  if (screenId === 'board' && !dragDropInitialized) {
     initDragAndDrop()
+    dragDropInitialized = true
+  }
+
+  // clean up supabase channel and reset state when leaving the game
+  if (screenId === 'home') {
+    leaveGame()
+    dragDropInitialized = false
   }
 }
 
@@ -58,21 +69,15 @@ window.addToken = function(player) {
   addTokenToHand(player)
 }
 
-// broadcast token creation to opponent
+// use direct import instead of dynamic import — prevents memory leaks
 window.broadcastTokenCreate = function(tokenId, tokenData, player) {
-  import('./sync.js').then(m => {
-    m.broadcastTokenCreate(tokenId, tokenData, player)
-  })
+  import('./sync.js').then(m => m.broadcastTokenCreate(tokenId, tokenData, player))
 }
 
-// broadcast token stat update to opponent
 window.broadcastTokenUpdate = function(tokenId, tokenData) {
-  import('./sync.js').then(m => {
-    m.broadcastTokenUpdate(tokenId, tokenData)
-  })
+  import('./sync.js').then(m => m.broadcastTokenUpdate(tokenId, tokenData))
 }
 
-// opponent created a token — register it here so we can render it
 window.onRemoteTokenCreate = function({ tokenId, tokenData, player }) {
   setRemoteAction(true)
   registerToken(tokenId, tokenData)
@@ -82,10 +87,8 @@ window.onRemoteTokenCreate = function({ tokenId, tokenData, player }) {
   setRemoteAction(false)
 }
 
-// opponent edited a token stat
 window.onRemoteTokenUpdate = function({ tokenId, tokenData }) {
   registerToken(tokenId, tokenData)
-  // re-render both boards in case token is on field
   renderField('a')
   renderField('b')
   renderHand('a')
@@ -132,7 +135,7 @@ window.onCardPlayed = function(player, cardName) {
 
 window.canAffordCard = function(player, cardName) {
   const card = cardLibrary[cardName]
-  if (!card) return true // tokens always free
+  if (!card) return true
   const target = player === 'a' ? playerA : playerB
   return card.cost <= getRemainingBank(target)
 }
@@ -230,7 +233,6 @@ window.onRemoteCardFlipped = function({ player, zoneType, index, faceUp }) {
 window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName, tokenData }) {
   setRemoteAction(true)
 
-  // if this move carries token data, register it first
   if (tokenData) {
     registerToken(cardName, tokenData)
   }

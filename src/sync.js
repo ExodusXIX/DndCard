@@ -7,10 +7,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 let channel = null
 
+// ── cleanly close the channel when leaving the game
+export function leaveGame() {
+  if (channel) {
+    supabase.removeChannel(channel)
+    channel = null
+  }
+}
+
 export function joinGame(roomId) {
+  // always clean up old channel before creating a new one
+  leaveGame()
+
   return new Promise((resolve) => {
     channel = supabase.channel(`game-${roomId}`)
-    
+
     channel.on('broadcast', { event: 'card_moved' }, ({ payload }) => {
       if (typeof window.onRemoteCardMoved === 'function') window.onRemoteCardMoved(payload)
     })
@@ -46,17 +57,21 @@ export function joinGame(roomId) {
     channel.on('broadcast', { event: 'card_flipped' }, ({ payload }) => {
       if (typeof window.onRemoteCardFlipped === 'function') window.onRemoteCardFlipped(payload)
     })
+
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') resolve()
     })
   })
 }
+
 export function broadcastRequestNames() {
   channel?.send({ type: 'broadcast', event: 'request_names', payload: {} })
 }
+
 export function broadcastCardMoved(payload) {
   channel?.send({ type: 'broadcast', event: 'card_moved', payload })
 }
+
 export function broadcastTokenCreate(tokenId, tokenData, player) {
   channel?.send({ type: 'broadcast', event: 'token_create', payload: { tokenId, tokenData, player } })
 }
@@ -64,6 +79,7 @@ export function broadcastTokenCreate(tokenId, tokenData, player) {
 export function broadcastTokenUpdate(tokenId, tokenData) {
   channel?.send({ type: 'broadcast', event: 'token_update', payload: { tokenId, tokenData } })
 }
+
 export function broadcastPlayerJoined(player, name) {
   channel?.send({ type: 'broadcast', event: 'player_joined', payload: { player, name } })
 }
@@ -71,9 +87,11 @@ export function broadcastPlayerJoined(player, name) {
 export function broadcastBankRolled(value) {
   channel?.send({ type: 'broadcast', event: 'bank_rolled', payload: { value } })
 }
+
 export function broadcastFlip(player, zoneType, index, faceUp) {
   channel?.send({ type: 'broadcast', event: 'card_flipped', payload: { player, zoneType, index, faceUp } })
 }
+
 export function broadcastHpChanged(player, value) {
   channel?.send({ type: 'broadcast', event: 'hp_changed', payload: { player, value } })
 }

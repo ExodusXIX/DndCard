@@ -326,7 +326,7 @@ defense: -
 cost: 1
 effect: The equipped monster gains +1500 DEF. When this card is sent from the field to the gallows: Return it to the top of the deck.
 
-Statue Of God
+Statue Of God (Babel)
 type: monster
 attribute: Babel
 attack: 3000
@@ -347,6 +347,7 @@ type: monster
 attribute: Land
 attack: 800
 defense: 2000
+cost: 1
 effect: When this card is conjured normally, give every monster in your deck +300ATK.
 
 Walrus Chieftain

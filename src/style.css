@@ -670,3 +670,16 @@ body {
 #board.perspective-b #a-bank-half {
   transform: rotate(180deg);
 }
+.field-card-name {
+  font-size: 0.65rem;
+  font-family: 'Cinzel', serif;
+  text-align: center;
+}
+
+.field-card-stats {
+  font-size: 0.6rem;
+  font-family: 'IM Fell English', serif;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  margin-top: 4px;
+}

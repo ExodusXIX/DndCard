@@ -127,7 +127,7 @@ function renderAll(player) {
 
 // ── FIELD ──────────────────────────────────────────────────
 
-function renderField(player) {
+export function renderField(player) {
   const pb = board[`player${player.toUpperCase()}`]
   ;['monster', 'spell'].forEach(zoneType => {
     pb[zoneType].forEach((cardName, i) => {
@@ -138,7 +138,6 @@ function renderField(player) {
         const card = cardLibrary[cardName]
         const cardEl = document.createElement('div')
         cardEl.className = `field-card ${card.type}`
-        cardEl.textContent = card.name
         cardEl.draggable = true
         cardEl.addEventListener('click', () => showCardDetail(cardName))
         cardEl.addEventListener('dragstart', e => {
@@ -148,6 +147,21 @@ function renderField(player) {
           e.dataTransfer.setData('fromIndex', String(i))
           e.dataTransfer.setData('fromPlayer', player)
         })
+
+        // card name always shown
+        const nameEl = document.createElement('div')
+        nameEl.className = 'field-card-name'
+        nameEl.textContent = card.name
+        cardEl.appendChild(nameEl)
+
+        // ATK / DEF only shown on monster zones
+        if (zoneType === 'monster') {
+          const statsEl = document.createElement('div')
+          statsEl.className = 'field-card-stats'
+          statsEl.textContent = `${card.attack} / ${card.defense}`
+          cardEl.appendChild(statsEl)
+        }
+
         el.appendChild(cardEl)
       } else {
         const label = document.createElement('span')
@@ -158,7 +172,6 @@ function renderField(player) {
     })
   })
 }
-
 // ── PILE ZONES (gallows, extraDeck) ────────────────────────
 // Shows top card as a preview — click opens full pile viewer
 

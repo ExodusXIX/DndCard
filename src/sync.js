@@ -8,37 +8,40 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 let channel = null
 
 export function joinGame(roomId) {
-  channel = supabase.channel(`game-${roomId}`)
+  return new Promise((resolve) => {
+    channel = supabase.channel(`game-${roomId}`)
+    
+    channel.on('broadcast', { event: 'card_moved' }, ({ payload }) => {
+      if (typeof window.onRemoteCardMoved === 'function') window.onRemoteCardMoved(payload)
+    })
+    channel.on('broadcast', { event: 'bank_rolled' }, ({ payload }) => {
+      if (typeof window.onRemoteBankRolled === 'function') window.onRemoteBankRolled(payload)
+    })
+    channel.on('broadcast', { event: 'hp_changed' }, ({ payload }) => {
+      if (typeof window.onRemoteHpChanged === 'function') window.onRemoteHpChanged(payload)
+    })
+    channel.on('broadcast', { event: 'deck_loaded' }, ({ payload }) => {
+      if (typeof window.onRemoteDeckLoaded === 'function') window.onRemoteDeckLoaded(payload)
+    })
+    channel.on('broadcast', { event: 'card_drawn' }, ({ payload }) => {
+      if (typeof window.onRemoteCardDrawn === 'function') window.onRemoteCardDrawn(payload)
+    })
+    channel.on('broadcast', { event: 'field_reset' }, () => {
+      if (typeof window.onRemoteFieldReset === 'function') window.onRemoteFieldReset()
+    })
+    channel.on('broadcast', { event: 'player_joined' }, ({ payload }) => {
+      if (typeof window.onRemotePlayerJoined === 'function') window.onRemotePlayerJoined(payload)
+    })
+    channel.on('broadcast', { event: 'request_names' }, () => {
+      const p = localStorage.getItem('currentPlayer')
+      const n = localStorage.getItem(`${p}_name`)
+      if (p && n) broadcastPlayerJoined(p, n)
+    })
 
-  // each listener registered separately — no chaining
-  channel.on('broadcast', { event: 'card_moved' }, ({ payload }) => {
-    if (typeof window.onRemoteCardMoved === 'function') window.onRemoteCardMoved(payload)
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') resolve()
+    })
   })
-  channel.on('broadcast', { event: 'bank_rolled' }, ({ payload }) => {
-    if (typeof window.onRemoteBankRolled === 'function') window.onRemoteBankRolled(payload)
-  })
-  channel.on('broadcast', { event: 'hp_changed' }, ({ payload }) => {
-    if (typeof window.onRemoteHpChanged === 'function') window.onRemoteHpChanged(payload)
-  })
-  channel.on('broadcast', { event: 'deck_loaded' }, ({ payload }) => {
-    if (typeof window.onRemoteDeckLoaded === 'function') window.onRemoteDeckLoaded(payload)
-  })
-  channel.on('broadcast', { event: 'card_drawn' }, ({ payload }) => {
-    if (typeof window.onRemoteCardDrawn === 'function') window.onRemoteCardDrawn(payload)
-  })
-  channel.on('broadcast', { event: 'field_reset' }, () => {
-    if (typeof window.onRemoteFieldReset === 'function') window.onRemoteFieldReset()
-  })
-  channel.on('broadcast', { event: 'player_joined' }, ({ payload }) => {
-    if (typeof window.onRemotePlayerJoined === 'function') window.onRemotePlayerJoined(payload)
-  })
-  channel.on('broadcast', { event: 'request_names' }, () => {
-  // re-broadcast our own name so the new joiner can see it
-  const player = localStorage.getItem('currentPlayer')
-  const name = localStorage.getItem(`${player}_name`)
-  if (player && name) broadcastPlayerJoined(player, name)
-  })
-  channel.subscribe()
 }
 export function broadcastRequestNames() {
   channel?.send({ type: 'broadcast', event: 'request_names', payload: {} })

@@ -14,7 +14,7 @@ window.showScreen = function(screenId) {
   }
 }
 
-window.enterGame = function() {
+window.enterGame = async function() {
   const player = document.getElementById('player-select').value
   const name = document.getElementById('player-name').value || `Player ${player.toUpperCase()}`
   const roomCode = document.getElementById('room-code').value.trim() || 'default'
@@ -23,14 +23,10 @@ window.enterGame = function() {
   localStorage.setItem('currentPlayer', player)
   setLocalPlayer(player)
 
-  // update name tag on board
   document.getElementById(`${player}-name`).textContent = name
-
-  // update bank label to show actual player name
   const bankLabel = document.getElementById(`${player}-bank-label`)
   if (bankLabel) bankLabel.textContent = name
 
-  // flip the layout if playing as Player B
   const boardEl = document.getElementById('board')
   if (player === 'b') {
     boardEl.classList.add('perspective-b')
@@ -38,10 +34,10 @@ window.enterGame = function() {
     boardEl.classList.remove('perspective-b')
   }
 
-  // join room, then request other player's name, then broadcast own name
-  joinGame(roomCode)
-  setTimeout(() => broadcastRequestNames(), 1000)
+  // wait for channel to be fully connected before broadcasting
+  await joinGame(roomCode)
   broadcastPlayerJoined(player, name)
+  broadcastRequestNames()
 
   showScreen('board')
 }
@@ -203,13 +199,15 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     dst[toZone].push(cardName)
   }
 
+  // import and call full renderAll for both players
   import('./board.js').then(m => {
     m.renderHand(fromPlayer)
     m.renderHand(toPlayer)
+    m.renderField(fromPlayer)
+    m.renderField(toPlayer)
   })
 
   setRemoteAction(false)
 }
-
 initDeckEditor()
 setupDeckDropzone()

@@ -99,11 +99,24 @@ function showContextMenu(x, y, items) {
     })
     contextMenu.appendChild(btn)
   })
-  contextMenu.style.left = `${x}px`
-  contextMenu.style.top = `${y}px`
-  contextMenu.classList.remove('hidden')
-}
 
+  // position off screen first to measure
+  contextMenu.style.left = '-9999px'
+  contextMenu.style.top = '-9999px'
+  contextMenu.classList.remove('hidden')
+
+  const menuW = contextMenu.offsetWidth
+  const menuH = contextMenu.offsetHeight
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+
+  // clamp so menu never gets cut off
+  const clampedX = Math.min(x, vw - menuW - 8)
+  const clampedY = Math.min(y, vh - menuH - 8)
+
+  contextMenu.style.left = `${clampedX}px`
+  contextMenu.style.top = `${clampedY}px`
+}
 // ── DRAG AND DROP ──────────────────────────────────────────
 // Uses event delegation on the board container instead of
 // individual zone elements — this way re-renders don't break listeners

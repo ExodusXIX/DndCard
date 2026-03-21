@@ -991,3 +991,79 @@ body {
   border-radius: 4px;
   letter-spacing: 0.15em;
 }
+/* ── CARD ITEM INFO STACK ────────────────────────────────── */
+.card-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.card-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.card-item-attr {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+/* ── DECK EDITOR CARD ITEMS ──────────────────────────────── */
+.card-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.card-item-info .card-item-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+}
+
+.card-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.card-item-attr {
+  font-family: 'Cinzel', serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.card-item-meta .card-item-type {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.card-item-meta .card-item-cost {
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+.add-main-btn, .add-extra-btn {
+  font-size: 0.55rem !important;
+  padding: 3px 6px !important;
+  width: auto !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 0 !important;
+}

@@ -182,6 +182,7 @@ window.triggerResetField = function() {
   setRemoteAction(false)
   broadcastFieldReset()
 }
+
 // ── REALTIME RECEIVERS ────────────────────────────────────
 
 window.onRemotePlayerJoined = function({ player, name }) {
@@ -241,21 +242,36 @@ window.onRemoteCardFlipped = function({ player, zoneType, index, faceUp }) {
 window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName, tokenData, faceUp }) {
   setRemoteAction(true)
 
-  if (tokenData) {
-    registerToken(cardName, tokenData)
-  }
+  if (tokenData) registerToken(cardName, tokenData)
 
   const src = board[`player${fromPlayer.toUpperCase()}`]
   const dst = board[`player${toPlayer.toUpperCase()}`]
 
+  // ── remove from source ─────────────────────────────────
   if (fromZone === 'monster' || fromZone === 'spell') {
+    // indexed zone — clear by index
     src[fromZone][parseInt(fromIndex)] = null
     delete src.faceState[`${fromZone}-${fromIndex}`]
+  } else if (fromZone === 'deck') {
+    // deck uses a numeric index — splice at that exact position
+    const idx = parseInt(fromIndex)
+    if (!isNaN(idx) && idx >= 0 && idx < src.deck.length) {
+      src.deck.splice(idx, 1)
+    } else {
+      // fallback: remove first occurrence by name
+      const i = src.deck.indexOf(cardName)
+      if (i !== -1) src.deck.splice(i, 1)
+    }
   } else {
-    const i = src[fromZone].indexOf(cardName)
-    if (i !== -1) src[fromZone].splice(i, 1)
+    // hand, gallows, extraDeck — remove first occurrence by name
+    const arr = src[fromZone]
+    if (arr) {
+      const i = arr.indexOf(cardName)
+      if (i !== -1) arr.splice(i, 1)
+    }
   }
 
+  // ── place in destination ───────────────────────────────
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       dst[toZone][toIndex] = cardName
@@ -264,10 +280,11 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
       }
     }
   } else {
-    dst[toZone].push(cardName)
+    const arr = dst[toZone]
+    if (arr) arr.push(cardName)
   }
 
-  // render everything so counts, piles, hands and fields all update
+  // ── render ─────────────────────────────────────────────
   renderHand(fromPlayer)
   renderHand(toPlayer)
   renderField(fromPlayer)
@@ -277,17 +294,15 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
   renderPile(toPlayer, 'gallows')
   renderPile(toPlayer, 'extraDeck')
 
-  // update counts manually since we skipped moveCard
-  const updateCounts = (p) => {
+  // update counts
+  ;[fromPlayer, toPlayer].forEach(p => {
     const pb = board[`player${p.toUpperCase()}`]
     const idMap = { deck: 'deck', gallows: 'gallows', extraDeck: 'extradeck' }
     ;['deck', 'gallows', 'extraDeck'].forEach(zone => {
       const el = document.getElementById(`${p}-${idMap[zone]}-count`)
       if (el) el.textContent = pb[zone].length
     })
-  }
-  updateCounts(fromPlayer)
-  updateCounts(toPlayer)
+  })
 
   setRemoteAction(false)
 }
@@ -320,11 +335,11 @@ async function loadPatchNotes() {
     list.innerHTML = '<p class="patch-notes-loading">Could not load patch notes.</p>'
   }
 }
+
 // ── VICTOR ────────────────────────────────────────────────
 const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1484709551013101720/rsNpjbtvZnwqbe_9aZNnBTd0sBjANK2g9Ou5L4H1j0kITV8hyMaA3lhx4Bb8MOAFGOw2'
 
 window.openVictorPopup = function() {
-  // populate buttons with current player names
   const nameA = document.getElementById('a-name').textContent
   const nameB = document.getElementById('b-name').textContent
   document.getElementById('victor-btn-a').textContent = `🏆 ${nameA}`
@@ -335,14 +350,11 @@ window.openVictorPopup = function() {
 window.declareVictor = async function(player) {
   const name = document.getElementById(`${player}-name`).textContent
   document.getElementById('victor-popup').classList.add('hidden')
-
   try {
     await fetch(DISCORD_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: `⚔️ **${name}** has won the duel!`
-      })
+      body: JSON.stringify({ content: `⚔️ **${name}** has won the duel!` })
     })
   } catch (e) {
     console.error('Failed to post to Discord:', e)
@@ -350,6 +362,5 @@ window.declareVictor = async function(player) {
 }
 
 loadPatchNotes()
-
 initDeckEditor()
 setupDeckDropzone()

@@ -18,17 +18,27 @@ function renderLibrary(filter = '') {
 
   Object.values(cardLibrary).forEach(card => {
     if (filter && !card.name.toLowerCase().includes(filter.toLowerCase()) &&
-        !card.type.toLowerCase().includes(filter.toLowerCase())) return
+        !card.type.toLowerCase().includes(filter.toLowerCase()) &&
+        !(card.attribute || '').toLowerCase().includes(filter.toLowerCase())) return
+
+    const attrHtml = card.attribute
+      ? `<span class="card-item-attr attr-${card.attribute.toLowerCase()}">${card.attribute}</span>`
+      : ''
 
     const el = document.createElement('div')
     el.className = 'card-item'
     el.dataset.cardName = card.name
     el.innerHTML = `
-      <span class="card-item-name">${card.name}</span>
-      <span class="card-item-type ${card.type}">${card.type}</span>
-      <span class="card-item-cost">Cost: ${card.cost}</span>
-      <button class="zone-btn add-main-btn" style="margin-left:auto">+ Main</button>
-      <button class="zone-btn add-extra-btn" style="margin-left:4px">+ Extra</button>
+      <div class="card-item-info">
+        <span class="card-item-name">${card.name}</span>
+        <div class="card-item-meta">
+          <span class="card-item-type ${card.type}">${card.type}</span>
+          ${attrHtml}
+          <span class="card-item-cost">Cost: ${card.cost}</span>
+        </div>
+      </div>
+      <button class="zone-btn add-main-btn" style="margin-left:auto;white-space:nowrap">+ Main</button>
+      <button class="zone-btn add-extra-btn" style="margin-left:4px;white-space:nowrap">+ Extra</button>
     `
     el.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return
@@ -52,13 +62,21 @@ function renderDeck() {
 
   currentDeck.forEach((cardName, index) => {
     const card = cardLibrary[cardName]
+    const attrHtml = card.attribute
+      ? `<span class="card-item-attr attr-${card.attribute.toLowerCase()}">${card.attribute}</span>`
+      : ''
     const el = document.createElement('div')
     el.className = 'card-item'
     el.dataset.cardName = cardName
     el.innerHTML = `
-      <span class="card-item-name">${card.name}</span>
-      <span class="card-item-type ${card.type}">${card.type}</span>
-      <span class="card-item-cost">Cost: ${card.cost}</span>
+      <div class="card-item-info">
+        <span class="card-item-name">${card.name}</span>
+        <div class="card-item-meta">
+          <span class="card-item-type ${card.type}">${card.type}</span>
+          ${attrHtml}
+          <span class="card-item-cost">Cost: ${card.cost}</span>
+        </div>
+      </div>
       <button class="remove-card-btn" onclick="removeFromDeck(${index})">✕</button>
     `
     el.addEventListener('click', (e) => {
@@ -68,7 +86,6 @@ function renderDeck() {
     container.appendChild(el)
   })
 
-  // update count label
   const label = document.getElementById('main-deck-count')
   if (label) label.textContent = `(${currentDeck.length})`
 }
@@ -80,13 +97,21 @@ function renderExtraDeck() {
 
   currentExtraDeck.forEach((cardName, index) => {
     const card = cardLibrary[cardName]
+    const attrHtml = card.attribute
+      ? `<span class="card-item-attr attr-${card.attribute.toLowerCase()}">${card.attribute}</span>`
+      : ''
     const el = document.createElement('div')
     el.className = 'card-item'
     el.dataset.cardName = cardName
     el.innerHTML = `
-      <span class="card-item-name">${card.name}</span>
-      <span class="card-item-type ${card.type}">${card.type}</span>
-      <span class="card-item-cost">Cost: ${card.cost}</span>
+      <div class="card-item-info">
+        <span class="card-item-name">${card.name}</span>
+        <div class="card-item-meta">
+          <span class="card-item-type ${card.type}">${card.type}</span>
+          ${attrHtml}
+          <span class="card-item-cost">Cost: ${card.cost}</span>
+        </div>
+      </div>
       <button class="remove-card-btn" onclick="removeFromExtraDeck(${index})">✕</button>
     `
     el.addEventListener('click', (e) => {
@@ -96,7 +121,6 @@ function renderExtraDeck() {
     container.appendChild(el)
   })
 
-  // update count label
   const label = document.getElementById('extra-deck-count')
   if (label) label.textContent = `(${currentExtraDeck.length})`
 }
@@ -164,7 +188,6 @@ function renderSavedDecks() {
 
   names.forEach(name => {
     const saved = allDecks[name]
-    // support both old (array) and new ({main, extra}) format
     const mainCount = Array.isArray(saved) ? saved.length : (saved.main || []).length
     const extraCount = Array.isArray(saved) ? 0 : (saved.extra || []).length
     const el = document.createElement('div')
@@ -226,7 +249,6 @@ window.saveDeck = function() {
     return
   }
   const allDecks = JSON.parse(localStorage.getItem('savedDecks') || '{}')
-  // save as new format: {main, extra}
   allDecks[deckName] = { main: currentDeck, extra: currentExtraDeck }
   localStorage.setItem('savedDecks', JSON.stringify(allDecks))
   renderSavedDecks()
@@ -237,7 +259,6 @@ window.loadDeckForEdit = function(name) {
   const allDecks = JSON.parse(localStorage.getItem('savedDecks') || '{}')
   const saved = allDecks[name]
   if (Array.isArray(saved)) {
-    // old format
     currentDeck = [...saved]
     currentExtraDeck = []
   } else {

@@ -165,7 +165,7 @@ export function initDragAndDrop() {
     const fromPlayer = e.dataTransfer.getData('fromPlayer')
     const toZone = zone.dataset.zone
     const toPlayer = zone.dataset.player
-    const toIndex = zone.dataset.index !== undefined ? parseInt(zone.dataset.index) : null
+    const toIndex = zone.dataset.index !== '' && zone.dataset.index !== undefined ? parseInt(zone.dataset.index) : null
     if (!cardName || !toZone || !toPlayer) return
     moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName)
   })
@@ -184,11 +184,22 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
     const key = `${fromZone}-${fromIndex}`
     delete src.faceState[key]
     src[fromZone][parseInt(fromIndex)] = null
+  } else if (fromZone === 'deck') {
+    const idx = parseInt(fromIndex)
+    if (!isNaN(idx) && idx >= 0 && idx < src.deck.length) {
+      src.deck.splice(idx, 1)
+    } else {
+      const i = src.deck.indexOf(cardName)
+      if (i !== -1) src.deck.splice(i, 1)
+    }
   } else {
-    const i = src[fromZone].indexOf(cardName)
-    if (i !== -1) src[fromZone].splice(i, 1)
+    const arr = src[fromZone]
+    if (arr) {
+      const i = arr.indexOf(cardName)
+      if (i !== -1) arr.splice(i, 1)
+    }
   }
-
+  console.log('move', fromZone, fromIndex, '->', toZone, toIndex, 'dst slot:', dst[toZone]?.[toIndex])
   // place in destination
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
@@ -219,7 +230,8 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
       src.hand.push(cardName)
     }
   } else {
-    dst[toZone].push(cardName)
+    const arr = dst[toZone]
+    if (arr) arr.push(cardName)
   }
 
   renderAll(fromPlayer)
@@ -453,9 +465,18 @@ function renderPileZone(player, zone) {
   if (cards.length > 0) {
     const topCardName = cards[cards.length - 1]
     const topCard = getCard(topCardName)
+    if (!topCard) return
+
     const cardEl = document.createElement('div')
     cardEl.className = `pile-card field-card ${topCard.type}`
-    cardEl.textContent = topCard.name
+
+    // only show card name to owner for extra deck, always show for gallows
+    if (zone === 'extraDeck' && player !== localPlayer) {
+      cardEl.textContent = '▪ Extra Deck'
+    } else {
+      cardEl.textContent = topCard.name
+    }
+
     cardEl.draggable = true
     cardEl.addEventListener('click', e => {
       e.stopPropagation()
@@ -492,6 +513,7 @@ function openPileViewer(player, zone) {
   } else {
     cards.forEach((cardName, index) => {
       const card = getCard(cardName)
+      if (!card) return
       const el = document.createElement('div')
       el.className = 'card-item'
       el.innerHTML = `
@@ -706,6 +728,7 @@ window.viewDeck = function(player) {
   } else {
     pb.deck.forEach((cardName, index) => {
       const card = getCard(cardName)
+      if (!card) return
       const el = document.createElement('div')
       el.className = 'card-item'
       el.innerHTML = `

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Card Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
-    <script type="module" crossorigin src="/DndCard/assets/index-6bsGWfvC.js"></script>
-    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-Cr9JewAj.css">
+    <script type="module" crossorigin src="/DndCard/assets/index-BhX3U9L3.js"></script>
+    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-DKVTiDvP.css">
   </head>
   <body>
     <div id="app">
@@ -82,9 +82,11 @@
             <div id="library-cards" class="library-scroll"></div>
           </div>
           <div class="editor-deck">
-            <h2 class="editor-title">Your Deck</h2>
+            <h2 class="editor-title">Main Deck <span id="main-deck-count" style="font-size:0.7rem;opacity:0.6">(0)</span></h2>
             <div id="deck-cards" class="deck-scroll"></div>
-            <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." />
+            <h2 class="editor-title" style="margin-top:16px">Extra Deck <span id="extra-deck-count" style="font-size:0.7rem;opacity:0.6">(0)</span></h2>
+            <div id="extra-deck-cards" class="deck-scroll"></div>
+            <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." style="margin-top:12px"/>
             <button class="menu-btn" onclick="saveDeck()">Save Deck</button>
             <div id="saved-decks-list"></div>
           </div>
@@ -118,6 +120,17 @@
               <span class="stat-label">EFFECT</span>
             </div>
             <p class="card-detail-effect" id="detail-effect"></p>
+          </div>
+        </div>
+
+        <!-- Victor popup -->
+        <div id="victor-popup" class="popup hidden">
+          <div class="popup-inner" style="text-align:center">
+            <h3 class="editor-title" style="margin-bottom:8px">⚔ Declare Victor</h3>
+            <p style="font-family:'IM Fell English',serif;font-size:0.8rem;color:rgba(200,168,75,0.6);margin-bottom:16px">Who has won the duel?</p>
+            <button class="btn-victor" id="victor-btn-a" onclick="declareVictor('a')"></button>
+            <button class="btn-victor" id="victor-btn-b" onclick="declareVictor('b')"></button>
+            <button class="back-btn" onclick="document.getElementById('victor-popup').classList.add('hidden')">Cancel</button>
           </div>
         </div>
 
@@ -263,11 +276,12 @@
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
             <div class="nav-center">
-              <div class="bank-orb" id="bank-orb">
+              <!-- orb click = roll bank -->
+              <div class="bank-orb" id="bank-orb" onclick="triggerRollBank()" style="cursor:pointer" title="Click to roll bank">
                 <span id="bank-value">—</span>
               </div>
-              <button class="zone-btn" onclick="triggerRollBank()">Roll Bank</button>
-              <button class="zone-btn" onclick="triggerResetField()">Reset Field</button>
+              <button class="btn-danger" onclick="triggerResetField()">Reset Field</button>
+              <button class="btn-victor-nav" onclick="openVictorPopup()">⚔ Victor</button>
               <button class="back-btn" onclick="showScreen('home')">⬅ Leave</button>
             </div>
             <div class="player-bank-half" id="a-bank-half">

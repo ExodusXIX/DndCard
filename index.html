@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Card Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
-    <script type="module" crossorigin src="/DndCard/assets/index-BhX3U9L3.js"></script>
-    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-DKVTiDvP.css">
+    <script type="module" crossorigin src="/DndCard/assets/index-DabYu_Mz.js"></script>
+    <link rel="stylesheet" crossorigin href="/DndCard/assets/index-QaRVKJXi.css">
   </head>
   <body>
     <div id="app">
@@ -48,6 +48,9 @@
 
       <!-- ── DECK EDITOR SCREEN ───────────────────────────── -->
       <div class="screen" id="deck-editor">
+
+        <!-- Back button fixed top right -->
+        <button class="back-btn deck-editor-back" onclick="showScreen('home')">⬅ Back</button>
 
         <!-- Editor card detail pip -->
         <div id="editor-card-detail" class="card-detail hidden">
@@ -91,7 +94,6 @@
             <div id="saved-decks-list"></div>
           </div>
         </div>
-        <button class="back-btn" onclick="showScreen('home')">Back</button>
       </div>
 
       <!-- ── BOARD SCREEN ──────────────────────────────────── -->
@@ -276,7 +278,6 @@
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
             <div class="nav-center">
-              <!-- orb click = roll bank -->
               <div class="bank-orb" id="bank-orb" onclick="triggerRollBank()" style="cursor:pointer" title="Click to roll bank">
                 <span id="bank-value">—</span>
               </div>

@@ -441,7 +441,6 @@ export function renderField(player) {
 }
 
 // ── PILE ZONES ─────────────────────────────────────────────
-// renamed to renderPileZone internally, exported as renderPile
 
 function renderPileZone(player, zone) {
   const pb = board[`player${player.toUpperCase()}`]
@@ -473,7 +472,6 @@ function renderPileZone(player, zone) {
   }
 }
 
-// export so main.js can call it for remote renders
 export function renderPile(player, zone) {
   renderPileZone(player, zone)
 }
@@ -631,7 +629,6 @@ export function loadDeckToBoard(player, deckName) {
   const allDecks = JSON.parse(localStorage.getItem('savedDecks') || '{}')
   if (!allDecks[deckName]) return
   const saved = allDecks[deckName]
-  // support both old format (array) and new format ({main, extra})
   if (Array.isArray(saved)) {
     board[`player${player.toUpperCase()}`].deck = [...saved]
     board[`player${player.toUpperCase()}`].extraDeck = []
@@ -707,7 +704,7 @@ window.viewDeck = function(player) {
   if (pb.deck.length === 0) {
     list.innerHTML = '<p class="setup-label">No cards in deck.</p>'
   } else {
-    pb.deck.forEach(cardName => {
+    pb.deck.forEach((cardName, index) => {
       const card = getCard(cardName)
       const el = document.createElement('div')
       el.className = 'card-item'
@@ -715,8 +712,28 @@ window.viewDeck = function(player) {
         <span class="card-item-name">${card.name}</span>
         <span class="card-item-type ${card.type}">${card.type}</span>
         <span class="card-item-cost">Cost: ${card.cost}</span>
+        <button class="zone-btn" style="margin-left:auto">To Hand</button>
       `
-      el.addEventListener('click', () => showCardDetail(cardName))
+      el.querySelector('button').addEventListener('click', e => {
+        e.stopPropagation()
+        pb.deck.splice(index, 1)
+        pb.hand.push(cardName)
+        updateAllCounts(player)
+        renderAll(player)
+        window.viewDeck(player)
+        if (!isRemoteAction) {
+          broadcastCardMoved({
+            fromPlayer: player,
+            fromZone: 'deck',
+            fromIndex: String(index),
+            toPlayer: player,
+            toZone: 'hand',
+            toIndex: null,
+            cardName
+          })
+        }
+      })
+      el.querySelector('.card-item-name').addEventListener('click', () => showCardDetail(cardName))
       list.appendChild(el)
     })
   }

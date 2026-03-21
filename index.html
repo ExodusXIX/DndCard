@@ -47,6 +47,9 @@
       <!-- ── DECK EDITOR SCREEN ───────────────────────────── -->
       <div class="screen" id="deck-editor">
 
+        <!-- Back button fixed top right -->
+        <button class="back-btn deck-editor-back" onclick="showScreen('home')">⬅ Back</button>
+
         <!-- Editor card detail pip -->
         <div id="editor-card-detail" class="card-detail hidden">
           <button class="card-detail-close" onclick="closeEditorCardDetail()">✕</button>
@@ -89,7 +92,6 @@
             <div id="saved-decks-list"></div>
           </div>
         </div>
-        <button class="back-btn" onclick="showScreen('home')">Back</button>
       </div>
 
       <!-- ── BOARD SCREEN ──────────────────────────────────── -->
@@ -274,7 +276,6 @@
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
             <div class="nav-center">
-              <!-- orb click = roll bank -->
               <div class="bank-orb" id="bank-orb" onclick="triggerRollBank()" style="cursor:pointer" title="Click to roll bank">
                 <span id="bank-value">—</span>
               </div>

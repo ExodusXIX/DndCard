@@ -1,11 +1,13 @@
 import { cardLibrary } from './cardLibrary.js'
 
 let currentDeck = []
+let currentExtraDeck = []
 let selectedCard = null
 
 export function initDeckEditor() {
   renderLibrary()
   renderDeck()
+  renderExtraDeck()
   setupSearch()
   renderSavedDecks()
 }
@@ -25,15 +27,20 @@ function renderLibrary(filter = '') {
       <span class="card-item-name">${card.name}</span>
       <span class="card-item-type ${card.type}">${card.type}</span>
       <span class="card-item-cost">Cost: ${card.cost}</span>
-      <button class="zone-btn" style="margin-left:auto">+ Add</button>
+      <button class="zone-btn add-main-btn" style="margin-left:auto">+ Main</button>
+      <button class="zone-btn add-extra-btn" style="margin-left:4px">+ Extra</button>
     `
     el.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return
       showEditorCardDetail(card.name)
     })
-    el.querySelector('button').addEventListener('click', () => {
+    el.querySelector('.add-main-btn').addEventListener('click', () => {
       currentDeck.push(card.name)
       renderDeck()
+    })
+    el.querySelector('.add-extra-btn').addEventListener('click', () => {
+      currentExtraDeck.push(card.name)
+      renderExtraDeck()
     })
     container.appendChild(el)
   })
@@ -60,6 +67,38 @@ function renderDeck() {
     })
     container.appendChild(el)
   })
+
+  // update count label
+  const label = document.getElementById('main-deck-count')
+  if (label) label.textContent = `(${currentDeck.length})`
+}
+
+function renderExtraDeck() {
+  const container = document.getElementById('extra-deck-cards')
+  if (!container) return
+  container.innerHTML = ''
+
+  currentExtraDeck.forEach((cardName, index) => {
+    const card = cardLibrary[cardName]
+    const el = document.createElement('div')
+    el.className = 'card-item'
+    el.dataset.cardName = cardName
+    el.innerHTML = `
+      <span class="card-item-name">${card.name}</span>
+      <span class="card-item-type ${card.type}">${card.type}</span>
+      <span class="card-item-cost">Cost: ${card.cost}</span>
+      <button class="remove-card-btn" onclick="removeFromExtraDeck(${index})">✕</button>
+    `
+    el.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return
+      showEditorCardDetail(cardName)
+    })
+    container.appendChild(el)
+  })
+
+  // update count label
+  const label = document.getElementById('extra-deck-count')
+  if (label) label.textContent = `(${currentExtraDeck.length})`
 }
 
 // ── EDITOR CARD DETAIL PIP ─────────────────────────────────
@@ -75,7 +114,6 @@ function showEditorCardDetail(cardName) {
   document.getElementById('editor-detail-defense').textContent = card.defense
   document.getElementById('editor-detail-cost').textContent = card.cost
 
-  // attribute
   const attrEl = document.getElementById('editor-detail-attribute')
   if (attrEl) {
     if (card.attribute) {
@@ -125,11 +163,15 @@ function renderSavedDecks() {
     : ''
 
   names.forEach(name => {
+    const saved = allDecks[name]
+    // support both old (array) and new ({main, extra}) format
+    const mainCount = Array.isArray(saved) ? saved.length : (saved.main || []).length
+    const extraCount = Array.isArray(saved) ? 0 : (saved.extra || []).length
     const el = document.createElement('div')
     el.className = 'card-item'
     el.innerHTML = `
       <span class="card-item-name">${name}</span>
-      <span class="card-item-cost">${allDecks[name].length} cards</span>
+      <span class="card-item-cost">${mainCount} main · ${extraCount} extra</span>
       <button class="remove-card-btn" onclick="loadDeckForEdit('${name}')">Edit</button>
       <button class="remove-card-btn" onclick="deleteDeck('${name}')">✕</button>
     `
@@ -139,21 +181,42 @@ function renderSavedDecks() {
 
 export function setupDeckDropzone() {
   const deckContainer = document.getElementById('deck-cards')
-  deckContainer.addEventListener('dragover', e => e.preventDefault())
-  deckContainer.addEventListener('drop', e => {
-    e.preventDefault()
-    const cardName = e.dataTransfer.getData('cardName')
-    const source = e.dataTransfer.getData('source')
-    if (source === 'library') {
-      currentDeck.push(cardName)
-      renderDeck()
-    }
-  })
+  if (deckContainer) {
+    deckContainer.addEventListener('dragover', e => e.preventDefault())
+    deckContainer.addEventListener('drop', e => {
+      e.preventDefault()
+      const cardName = e.dataTransfer.getData('cardName')
+      const source = e.dataTransfer.getData('source')
+      if (source === 'library') {
+        currentDeck.push(cardName)
+        renderDeck()
+      }
+    })
+  }
+
+  const extraContainer = document.getElementById('extra-deck-cards')
+  if (extraContainer) {
+    extraContainer.addEventListener('dragover', e => e.preventDefault())
+    extraContainer.addEventListener('drop', e => {
+      e.preventDefault()
+      const cardName = e.dataTransfer.getData('cardName')
+      const source = e.dataTransfer.getData('source')
+      if (source === 'library') {
+        currentExtraDeck.push(cardName)
+        renderExtraDeck()
+      }
+    })
+  }
 }
 
 window.removeFromDeck = function(index) {
   currentDeck.splice(index, 1)
   renderDeck()
+}
+
+window.removeFromExtraDeck = function(index) {
+  currentExtraDeck.splice(index, 1)
+  renderExtraDeck()
 }
 
 window.saveDeck = function() {
@@ -163,7 +226,8 @@ window.saveDeck = function() {
     return
   }
   const allDecks = JSON.parse(localStorage.getItem('savedDecks') || '{}')
-  allDecks[deckName] = currentDeck
+  // save as new format: {main, extra}
+  allDecks[deckName] = { main: currentDeck, extra: currentExtraDeck }
   localStorage.setItem('savedDecks', JSON.stringify(allDecks))
   renderSavedDecks()
   alert(`Deck "${deckName}" saved!`)
@@ -171,9 +235,18 @@ window.saveDeck = function() {
 
 window.loadDeckForEdit = function(name) {
   const allDecks = JSON.parse(localStorage.getItem('savedDecks') || '{}')
-  currentDeck = [...allDecks[name]]
+  const saved = allDecks[name]
+  if (Array.isArray(saved)) {
+    // old format
+    currentDeck = [...saved]
+    currentExtraDeck = []
+  } else {
+    currentDeck = [...(saved.main || [])]
+    currentExtraDeck = [...(saved.extra || [])]
+  }
   document.getElementById('deck-name-input').value = name
   renderDeck()
+  renderExtraDeck()
 }
 
 window.deleteDeck = function(name) {

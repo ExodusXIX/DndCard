@@ -59,8 +59,6 @@ export const board = {
   }
 }
 
-// ── FULL BOARD RESET ───────────────────────────────────────
-// Called when leaving the game — wipes all state so next session is clean
 export function resetBoard() {
   ;['playerA', 'playerB'].forEach(p => {
     board[p].monster = [null, null, null]
@@ -72,7 +70,6 @@ export function resetBoard() {
     board[p].faceState = {}
     board[p].setFaceDown = {}
   })
-  // clear token store
   Object.keys(tokenStore).forEach(k => delete tokenStore[k])
   tokenCounter = 0
 }
@@ -118,7 +115,6 @@ function showContextMenu(x, y, items) {
     contextMenu.appendChild(btn)
   })
 
-  // position off screen first to measure
   contextMenu.style.left = '-9999px'
   contextMenu.style.top = '-9999px'
   contextMenu.classList.remove('hidden')
@@ -180,10 +176,7 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
   const dst = board[`player${toPlayer.toUpperCase()}`]
   const card = getCard(cardName)
 
-  // save face state BEFORE removing from source
   const savedFaceState = src.faceState[`${fromZone}-${fromIndex}`] ?? true
-
-  // check if hand card is queued face down BEFORE removing
   const playFaceDown = fromZone === 'hand' && src.setFaceDown[cardName] === true
 
   // remove from source
@@ -236,7 +229,6 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
 
   if (!isRemoteAction) {
     const payload = { fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, cardName }
-    // broadcast face state so opponent renders correctly
     if (toZone === 'monster' || toZone === 'spell') {
       payload.faceUp = dst.faceState[`${toZone}-${toIndex}`] ?? true
     }
@@ -248,8 +240,8 @@ function moveCard(fromPlayer, fromZone, fromIndex, toPlayer, toZone, toIndex, ca
 function renderAll(player) {
   renderHand(player)
   renderField(player)
-  renderPile(player, 'gallows')
-  renderPile(player, 'extraDeck')
+  renderPileZone(player, 'gallows')
+  renderPileZone(player, 'extraDeck')
 }
 
 // ── FIELD ──────────────────────────────────────────────────
@@ -449,8 +441,9 @@ export function renderField(player) {
 }
 
 // ── PILE ZONES ─────────────────────────────────────────────
+// renamed to renderPileZone internally, exported as renderPile
 
-function renderPile(player, zone) {
+function renderPileZone(player, zone) {
   const pb = board[`player${player.toUpperCase()}`]
   const containerId = `${player}-${zone === 'extraDeck' ? 'extradeck' : zone}`
   const container = document.getElementById(containerId)
@@ -478,6 +471,11 @@ function renderPile(player, zone) {
     })
     container.appendChild(cardEl)
   }
+}
+
+// export so main.js can call it for remote renders
+export function renderPile(player, zone) {
+  renderPileZone(player, zone)
 }
 
 // ── PILE VIEWER ────────────────────────────────────────────
@@ -538,7 +536,7 @@ export function renderHand(player) {
 
   pb.hand.forEach((cardName) => {
     const card = getCard(cardName)
-    if (!card) return // guard against stale card references
+    if (!card) return
     const el = document.createElement('div')
 
     if (player === localPlayer) {
@@ -632,7 +630,15 @@ export function registerToken(tokenId, tokenData) {
 export function loadDeckToBoard(player, deckName) {
   const allDecks = JSON.parse(localStorage.getItem('savedDecks') || '{}')
   if (!allDecks[deckName]) return
-  board[`player${player.toUpperCase()}`].deck = [...allDecks[deckName]]
+  const saved = allDecks[deckName]
+  // support both old format (array) and new format ({main, extra})
+  if (Array.isArray(saved)) {
+    board[`player${player.toUpperCase()}`].deck = [...saved]
+    board[`player${player.toUpperCase()}`].extraDeck = []
+  } else {
+    board[`player${player.toUpperCase()}`].deck = [...(saved.main || [])]
+    board[`player${player.toUpperCase()}`].extraDeck = [...(saved.extra || [])]
+  }
   loadedDeckNames[player] = deckName
   updateAllCounts(player)
   window.closeDeckPicker()

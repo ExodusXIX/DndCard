@@ -1,7 +1,7 @@
 import './style.css'
 import { initDeckEditor, setupDeckDropzone } from './deckEditor.js'
 import { playerA, playerB, rollBank, spendFromBank, getRemainingBank, cardLibrary, gameState } from './game.js'
-import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, board, setRemoteAction, addTokenToHand, registerToken, resetBoard } from './board.js'
+import { setLocalPlayer, showCardDetail, initDragAndDrop, showDeckPicker, shuffleDeck, resetField, loadDeckToBoard, drawCard, renderHand, renderField, renderPile, board, setRemoteAction, addTokenToHand, registerToken, resetBoard } from './board.js'
 import { joinGame, leaveGame, broadcastBankRolled, broadcastHpChanged, broadcastCardDrawn, broadcastDeckLoaded, broadcastFieldReset, broadcastPlayerJoined, broadcastRequestNames, broadcastFlip } from './sync.js'
 
 let localPlayer = 'a'
@@ -22,7 +22,6 @@ window.showScreen = function(screenId) {
     leaveGame()
     resetBoard()
     dragDropInitialized = false
-    // reset HP display
     ;['a', 'b'].forEach(p => {
       const hp = document.getElementById(`${p}-hp-value`)
       if (hp) hp.textContent = '10'
@@ -176,13 +175,13 @@ window.triggerShuffle = function(player) {
 }
 
 window.triggerResetField = function() {
+  if (!confirm('Reset the field? All cards will be sent to the Gallows.')) return
   setRemoteAction(true)
   resetField('a')
   resetField('b')
   setRemoteAction(false)
   broadcastFieldReset()
 }
-
 // ── REALTIME RECEIVERS ────────────────────────────────────
 
 window.onRemotePlayerJoined = function({ player, name }) {
@@ -260,7 +259,6 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
   if (toZone === 'monster' || toZone === 'spell') {
     if (toIndex !== null && dst[toZone][toIndex] === null) {
       dst[toZone][toIndex] = cardName
-      // apply face state from broadcaster — this fixes face-down summon visibility
       if (faceUp !== undefined) {
         dst.faceState[`${toZone}-${toIndex}`] = faceUp
       }
@@ -269,13 +267,89 @@ window.onRemoteCardMoved = function({ fromPlayer, fromZone, fromIndex, toPlayer,
     dst[toZone].push(cardName)
   }
 
+  // render everything so counts, piles, hands and fields all update
   renderHand(fromPlayer)
   renderHand(toPlayer)
   renderField(fromPlayer)
   renderField(toPlayer)
+  renderPile(fromPlayer, 'gallows')
+  renderPile(fromPlayer, 'extraDeck')
+  renderPile(toPlayer, 'gallows')
+  renderPile(toPlayer, 'extraDeck')
+
+  // update counts manually since we skipped moveCard
+  const updateCounts = (p) => {
+    const pb = board[`player${p.toUpperCase()}`]
+    const idMap = { deck: 'deck', gallows: 'gallows', extraDeck: 'extradeck' }
+    ;['deck', 'gallows', 'extraDeck'].forEach(zone => {
+      const el = document.getElementById(`${p}-${idMap[zone]}-count`)
+      if (el) el.textContent = pb[zone].length
+    })
+  }
+  updateCounts(fromPlayer)
+  updateCounts(toPlayer)
 
   setRemoteAction(false)
 }
+
+// ── PATCH NOTES ───────────────────────────────────────────
+
+async function loadPatchNotes() {
+  const list = document.getElementById('patch-notes-list')
+  if (!list) return
+  try {
+    const res = await fetch('https://api.github.com/repos/exodusxix/DndCard/commits?per_page=20')
+    if (!res.ok) throw new Error('Failed to fetch')
+    const commits = await res.json()
+    list.innerHTML = ''
+    commits.forEach(commit => {
+      const msg = commit.commit.message.split('\n')[0]
+      const author = commit.commit.author.name
+      const date = new Date(commit.commit.author.date).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      })
+      const el = document.createElement('div')
+      el.className = 'patch-note-item'
+      el.innerHTML = `
+        <span class="patch-note-msg">${msg}</span>
+        <span class="patch-note-meta">${author} · ${date}</span>
+      `
+      list.appendChild(el)
+    })
+  } catch (e) {
+    list.innerHTML = '<p class="patch-notes-loading">Could not load patch notes.</p>'
+  }
+}
+// ── VICTOR ────────────────────────────────────────────────
+const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1484709551013101720/rsNpjbtvZnwqbe_9aZNnBTd0sBjANK2g9Ou5L4H1j0kITV8hyMaA3lhx4Bb8MOAFGOw2'
+
+window.openVictorPopup = function() {
+  // populate buttons with current player names
+  const nameA = document.getElementById('a-name').textContent
+  const nameB = document.getElementById('b-name').textContent
+  document.getElementById('victor-btn-a').textContent = `🏆 ${nameA}`
+  document.getElementById('victor-btn-b').textContent = `🏆 ${nameB}`
+  document.getElementById('victor-popup').classList.remove('hidden')
+}
+
+window.declareVictor = async function(player) {
+  const name = document.getElementById(`${player}-name`).textContent
+  document.getElementById('victor-popup').classList.add('hidden')
+
+  try {
+    await fetch(DISCORD_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: `⚔️ **${name}** has won the duel!`
+      })
+    })
+  } catch (e) {
+    console.error('Failed to post to Discord:', e)
+  }
+}
+
+loadPatchNotes()
 
 initDeckEditor()
 setupDeckDropzone()

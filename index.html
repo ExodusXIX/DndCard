@@ -11,9 +11,17 @@
 
       <!-- ── HOME SCREEN ──────────────────────────────────── -->
       <div class="screen active" id="home">
-        <div class="home-container">
-          <button class="menu-btn" onclick="showScreen('setup')">Play</button>
-          <button class="menu-btn" onclick="showScreen('deck-editor')">Deck Builder</button>
+        <div class="home-layout">
+          <div class="home-container">
+            <button class="menu-btn" onclick="showScreen('setup')">Play</button>
+            <button class="menu-btn" onclick="showScreen('deck-editor')">Deck Builder</button>
+          </div>
+          <div class="patch-notes">
+            <h3 class="patch-notes-title">Patch Notes</h3>
+            <div class="patch-notes-list" id="patch-notes-list">
+              <p class="patch-notes-loading">Loading...</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -72,9 +80,11 @@
             <div id="library-cards" class="library-scroll"></div>
           </div>
           <div class="editor-deck">
-            <h2 class="editor-title">Your Deck</h2>
+            <h2 class="editor-title">Main Deck <span id="main-deck-count" style="font-size:0.7rem;opacity:0.6">(0)</span></h2>
             <div id="deck-cards" class="deck-scroll"></div>
-            <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." />
+            <h2 class="editor-title" style="margin-top:16px">Extra Deck <span id="extra-deck-count" style="font-size:0.7rem;opacity:0.6">(0)</span></h2>
+            <div id="extra-deck-cards" class="deck-scroll"></div>
+            <input class="setup-input" type="text" id="deck-name-input" placeholder="Name your deck..." style="margin-top:12px"/>
             <button class="menu-btn" onclick="saveDeck()">Save Deck</button>
             <div id="saved-decks-list"></div>
           </div>
@@ -108,6 +118,17 @@
               <span class="stat-label">EFFECT</span>
             </div>
             <p class="card-detail-effect" id="detail-effect"></p>
+          </div>
+        </div>
+
+        <!-- Victor popup -->
+        <div id="victor-popup" class="popup hidden">
+          <div class="popup-inner" style="text-align:center">
+            <h3 class="editor-title" style="margin-bottom:8px">⚔ Declare Victor</h3>
+            <p style="font-family:'IM Fell English',serif;font-size:0.8rem;color:rgba(200,168,75,0.6);margin-bottom:16px">Who has won the duel?</p>
+            <button class="btn-victor" id="victor-btn-a" onclick="declareVictor('a')"></button>
+            <button class="btn-victor" id="victor-btn-b" onclick="declareVictor('b')"></button>
+            <button class="back-btn" onclick="document.getElementById('victor-popup').classList.add('hidden')">Cancel</button>
           </div>
         </div>
 
@@ -145,7 +166,6 @@
 
             <!-- Player B board -->
             <div class="player-board" id="playerB">
-              <!-- Token button above B's name — after rotation this sits at top for B -->
               <div class="token-bar">
                 <button class="zone-btn" onclick="addToken('b')">+ Token</button>
               </div>
@@ -196,7 +216,6 @@
 
             <!-- Player A board -->
             <div class="player-board" id="playerA">
-              <!-- Token button above A's name -->
               <div class="token-bar">
                 <button class="zone-btn" onclick="addToken('a')">+ Token</button>
               </div>
@@ -255,11 +274,12 @@
               <button class="zone-btn" onclick="triggerShuffle('b')">Shuffle</button>
             </div>
             <div class="nav-center">
-              <div class="bank-orb" id="bank-orb">
+              <!-- orb click = roll bank -->
+              <div class="bank-orb" id="bank-orb" onclick="triggerRollBank()" style="cursor:pointer" title="Click to roll bank">
                 <span id="bank-value">—</span>
               </div>
-              <button class="zone-btn" onclick="triggerRollBank()">Roll Bank</button>
-              <button class="zone-btn" onclick="triggerResetField()">Reset Field</button>
+              <button class="btn-danger" onclick="triggerResetField()">Reset Field</button>
+              <button class="btn-victor-nav" onclick="openVictorPopup()">⚔ Victor</button>
               <button class="back-btn" onclick="showScreen('home')">⬅ Leave</button>
             </div>
             <div class="player-bank-half" id="a-bank-half">
